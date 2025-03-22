@@ -1,17 +1,19 @@
 /** @type {import('@remix-run/dev').AppConfig} */
 export default {
-  ignoredRouteFiles: ["**/.*"],
-  serverModuleFormat: "esm",
+  ignoredRouteFiles: ['**/.*'],
+  serverModuleFormat: 'esm',
   tailwind: true,
   future: {
     v3_fetcherPersist: true,
     v3_relativeSplatPath: true,
     v3_throwAbortReason: true,
     v3_lazyRouteDiscovery: true,
-    v3_singleFetch: true
+    v3_singleFetch: true,
   },
-  serverDependenciesToBundle: [
-    "lucide-react",
-    "framer-motion"
-  ]
+  serverDependenciesToBundle: ['lucide-react', 'framer-motion'],
+  browserNodeBuiltinsPolyfill: {
+    modules: {
+      events: true, // Polyfill for Privy's Web3 dependencies
+    },
+  },
 };
