@@ -84,6 +84,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function CampaignDetail() {
   const { campaign } = useLoaderData<typeof loader>();
 
+  console.log(campaign, '::campaign');
+
   return (
     <div className="min-h-screen bg-slate-950">
       <div className="mx-auto max-w-6xl px-6 py-8">
@@ -103,7 +105,9 @@ export default function CampaignDetail() {
               <Trophy className="w-8 h-8 text-[rgb(var(--primary))]" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold">{campaign.title}</h1>
+              <h1 className="text-4xl font-bold text-white">
+                {campaign.title}
+              </h1>
               <p className="text-slate-400 mt-2">{campaign.description}</p>
             </div>
           </div>

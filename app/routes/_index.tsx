@@ -24,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         description:
           'Get exclusive early access to our upcoming NFT collection',
         expires_at: '2025-04-01',
-        value: 500,
+        value: '500 per week',
         image:
           'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&auto=format&fit=crop&q=60',
         featured: true,
@@ -35,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         title: 'Community Moderator Role',
         description: 'Become a moderator in our growing community',
         expires_at: '2025-03-28',
-        value: 300,
+        value: '500 per week',
         image:
           'https://images.unsplash.com/photo-1528901166007-3784c7dd3653?w=800&auto=format&fit=crop&q=60',
         featured: true,
@@ -46,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         title: 'Premium Membership',
         description: '1-year premium membership with exclusive benefits',
         expires_at: '2025-03-25',
-        value: 1000,
+        value: '500 per week',
         image:
           'https://images.unsplash.com/photo-1614849963640-9cc74b2a826f?w=800&auto=format&fit=crop&q=60',
         featured: true,
@@ -57,7 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         title: 'Limited Edition Merch',
         description: 'Exclusive merchandise only for reward holders',
         expires_at: '2025-04-15',
-        value: 150,
+        value: '500 per week',
         image:
           'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=60',
         featured: false,
@@ -68,7 +68,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         description:
           'Participate in our exclusive gaming tournament with pro players',
         expires_at: '2025-04-20',
-        value: 750,
+        value: '500 per week',
         image:
           'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=60',
         featured: true,
@@ -161,10 +161,7 @@ function RewardCard({ reward }: { reward: any }) {
         </div>
         <p className="text-slate-300 mb-4 line-clamp-2">{reward.description}</p>
         <div className="text-2xl font-bold text-[rgb(var(--primary))] mb-4">
-          $
-          {typeof reward.value === 'number'
-            ? reward.value.toLocaleString()
-            : '0'}
+          ${typeof reward.value ? reward.value : '0'}
         </div>
         <div className="flex items-center gap-2 text-slate-400">
           <Clock className="w-4 h-4" />
