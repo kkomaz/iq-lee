@@ -13,12 +13,17 @@ export const meta = () => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  const name = formData.get('name') as string;
+  const title = formData.get('title') as string;
+  const description = formData.get('description') as string;
+  const longDescription = formData.get('longDescription') as string;
+  const expiresAt = formData.get('expiresAt') as string;
+  const value = formData.get('value') as string;
+  const image = formData.get('image') as string;
   const userId = formData.get('userId') as string;
 
-  if (!name) {
+  if (!title) {
     return new Response(
-      JSON.stringify({ error: 'Campaign name is required' }),
+      JSON.stringify({ error: 'Campaign title is required' }),
       {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -42,7 +47,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   // Create campaign
   await prisma.campaign.create({
     data: {
-      name,
+      title,
+      description: description || 'No description provided',
+      longDescription: longDescription || 'No extended details provided',
+      expiresAt: expiresAt
+        ? new Date(expiresAt)
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      value: value || '0',
+      image: image || 'https://via.placeholder.com/150',
       userId,
     },
   });
@@ -109,18 +121,78 @@ export default function Admin() {
       </nav>
       <div className="container mx-auto p-4 text-white">
         <h2 className="text-2xl font-semibold mb-4">Create a Campaign</h2>
-        <Form method="post" className="space-y-4">
+        <Form method="post" className="space-y-4 max-w-lg">
           <input type="hidden" name="userId" value={user?.id} />
           <div>
-            <label htmlFor="name" className="block text-slate-300 mb-1">
-              Campaign Name
+            <label htmlFor="title" className="block text-slate-300 mb-1">
+              Campaign Title
             </label>
             <input
               type="text"
-              id="name"
-              name="name"
+              id="title"
+              name="title"
               className="w-full p-2 rounded bg-slate-800 text-white border border-slate-700 focus:outline-none focus:border-blue-500"
-              placeholder="Enter campaign name"
+              placeholder="Enter campaign title"
+            />
+          </div>
+          <div>
+            <label htmlFor="description" className="block text-slate-300 mb-1">
+              Short Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              className="w-full p-2 rounded bg-slate-800 text-white border border-slate-700 focus:outline-none focus:border-blue-500"
+              placeholder="Enter short description"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="longDescription"
+              className="block text-slate-300 mb-1"
+            >
+              Long Description
+            </label>
+            <textarea
+              id="longDescription"
+              name="longDescription"
+              className="w-full p-2 rounded bg-slate-800 text-white border border-slate-700 focus:outline-none focus:border-blue-500"
+              placeholder="Enter detailed description"
+            />
+          </div>
+          <div>
+            <label htmlFor="expiresAt" className="block text-slate-300 mb-1">
+              Expires At
+            </label>
+            <input
+              type="date"
+              id="expiresAt"
+              name="expiresAt"
+              className="w-full p-2 rounded bg-slate-800 text-white border border-slate-700 focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="value" className="block text-slate-300 mb-1">
+              Value
+            </label>
+            <input
+              type="text"
+              id="value"
+              name="value"
+              className="w-full p-2 rounded bg-slate-800 text-white border border-slate-700 focus:outline-none focus:border-blue-500"
+              placeholder="e.g., 500 per week"
+            />
+          </div>
+          <div>
+            <label htmlFor="image" className="block text-slate-300 mb-1">
+              Image URL
+            </label>
+            <input
+              type="text"
+              id="image"
+              name="image"
+              className="w-full p-2 rounded bg-slate-800 text-white border border-slate-700 focus:outline-none focus:border-blue-500"
+              placeholder="Enter image URL"
             />
           </div>
           <button

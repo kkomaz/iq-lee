@@ -16,10 +16,18 @@ model User {
 }
 
 model Campaign {
-  id        Int      @id @default(autoincrement())
-  name      String   // The one field for now
-  userId    String   // Foreign key to User
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  title          String   // Renamed from 'name'
+  description    String   // Short description
+  longDescription String   // Added
+  expiresAt      DateTime // Added
+  value          String   // Added
+  image          String   // Added
+  featured       Boolean  @default(false) // Added
+  isNew          Boolean  @default(false) // Added
+  isAd           Boolean  @default(false) // Added
+  userId         String   // Foreign key to User
+  user           User     @relation(fields: [userId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
