@@ -1,6 +1,8 @@
 import { Trophy } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
-import { Link } from '@remix-run/react';
+import { Link, Form, useActionData } from '@remix-run/react';
+import { ActionFunctionArgs } from '@remix-run/node';
+import prisma from '~/lib/prisma.server';
 
 export const meta = () => {
   return [
@@ -9,8 +11,51 @@ export const meta = () => {
   ];
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const name = formData.get('name') as string;
+  const userId = formData.get('userId') as string;
+
+  if (!name) {
+    return new Response(
+      JSON.stringify({ error: 'Campaign name is required' }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+  if (!userId) {
+    return new Response(JSON.stringify({ error: 'User ID is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Upsert user (create if not exists)
+  await prisma.user.upsert({
+    where: { id: userId },
+    update: {},
+    create: { id: userId, email: 'unknown@example.com' }, // Placeholder email
+  });
+
+  // Create campaign
+  await prisma.campaign.create({
+    data: {
+      name,
+      userId,
+    },
+  });
+
+  return new Response(JSON.stringify({ success: 'Campaign created!' }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+};
+
 export default function Admin() {
   const { login, authenticated, user, logout } = usePrivy();
+  const actionData = useActionData<{ error?: string; success?: string }>();
 
   if (!authenticated) {
     return (
@@ -55,8 +100,34 @@ export default function Admin() {
         </div>
       </nav>
       <div className="container mx-auto p-4 text-white">
-        <p>Welcome, {user?.email?.address || 'Admin'}!</p>
-        <p>This is your protected admin page.</p>
+        <h2 className="text-2xl font-semibold mb-4">Create a Campaign</h2>
+        <Form method="post" className="space-y-4">
+          <input type="hidden" name="userId" value={user?.id} />
+          <div>
+            <label htmlFor="name" className="block text-slate-300 mb-1">
+              Campaign Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              className="w-full p-2 rounded bg-slate-800 text-white border border-slate-700 focus:outline-none focus:border-blue-500"
+              placeholder="Enter campaign name"
+            />
+          </div>
+          <button
+            type="submit"
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+          >
+            Create Campaign
+          </button>
+          {actionData?.error && (
+            <p className="text-red-400">{actionData.error}</p>
+          )}
+          {actionData?.success && (
+            <p className="text-green-400">{actionData.success}</p>
+          )}
+        </Form>
       </div>
     </div>
   );
