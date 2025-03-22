@@ -36,7 +36,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   await prisma.user.upsert({
     where: { id: userId },
     update: {},
-    create: { id: userId, email: 'unknown@example.com' }, // Placeholder email
+    create: { id: userId, email: 'unknown@example.com' },
   });
 
   // Create campaign
@@ -91,12 +91,20 @@ export default function Admin() {
               Admin Dashboard
             </span>
           </div>
-          <button
-            onClick={logout}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
-          >
-            Log Out
-          </button>
+          <div className="flex gap-4">
+            <Link
+              to="/"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+              Home
+            </Link>
+            <button
+              onClick={logout}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+            >
+              Log Out
+            </button>
+          </div>
         </div>
       </nav>
       <div className="container mx-auto p-4 text-white">
