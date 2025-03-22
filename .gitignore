@@ -26,3 +26,9 @@ dist-ssr
 
 # Ignore build directory
 build/
+
+# Ignore public build directory
+public/build/
+
+# Ignore cache directory
+.cache/
