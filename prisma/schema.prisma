@@ -22,6 +22,7 @@ model Campaign {
   longDescription String   // Added
   expiresAt      DateTime // Added
   value          String   // Added
+  totalAmount    Int      // New field for total reward amount
   image          String   // Added
   featured       Boolean  @default(false) // Added
   isNew          Boolean  @default(false) // Added

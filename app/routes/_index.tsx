@@ -5,14 +5,6 @@ import { Lamp } from '~/components/ui/lamp';
 import { Logo } from '~/components/ui/logo';
 import prisma from '~/lib/prisma.server';
 
-// Simple slugify function
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-}
-
 export const meta = () => {
   return [
     { title: 'KaitoRewards - Earn Rewards for Your Contributions' },
@@ -126,8 +118,13 @@ function RewardCard({
           </div>
         </div>
         <p className="text-slate-300 mb-4 line-clamp-2">{reward.description}</p>
-        <div className="text-2xl font-bold text-[rgb(var(--primary))] mb-4">
-          {reward.value}
+        <div className="flex items-baseline gap-2 mb-4">
+          <div className="text-2xl font-bold text-[rgb(var(--primary))]">
+            ${reward.value}
+          </div>
+          <div className="text-sm text-emerald-300">
+            (est. total ~ ${reward.totalAmount.toLocaleString()})
+          </div>
         </div>
         <div className="flex items-center gap-2 text-slate-400">
           <Clock className="w-4 h-4" />
@@ -138,6 +135,13 @@ function RewardCard({
       </div>
     </Link>
   );
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
 }
 
 export default function Index() {
@@ -168,6 +172,20 @@ export default function Index() {
                 upcoming campaigns, exclusive memberships, and unique
                 opportunities.
               </p>
+              <div className="mt-8 flex justify-center gap-4">
+                <Link
+                  to="/signup"
+                  className="px-6 py-3 bg-[rgb(var(--primary))] text-slate-950 rounded-lg font-medium hover:opacity-90 transition-all"
+                >
+                  Get Started
+                </Link>
+                <Link
+                  to="#featured"
+                  className="px-6 py-3 bg-white/5 text-white rounded-lg font-medium hover:bg-white/10 transition-all backdrop-blur-sm"
+                >
+                  View Rewards
+                </Link>
+              </div>
             </div>
           </div>
 
