@@ -330,9 +330,13 @@ export default function Index() {
                 Discover Exclusive <br /> Rewards & Campaigns
               </h1>
               <p className="mt-4 font-normal text-base text-slate-400 max-w-lg text-center mx-auto">
-                Stay ahead of the curve with KaitoRewards. Get early access to
-                upcoming campaigns, exclusive memberships, and unique
-                opportunities.
+                Stay ahead of the game with{' '}
+                <span className="text-[rgb(var(--primary))] ">
+                  IncentiveIQ!
+                </span>{' '}
+                Earn rewards for engaging with projects on Kaito, climb the
+                leaderboard, and unlock exclusive perks, early access, and
+                unique opportunities.
               </p>
               {/* <div className="mt-8 flex justify-center gap-4">
                 <Link
