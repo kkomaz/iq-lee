@@ -15,7 +15,6 @@ export const meta = () => {
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const slugParam = params.slug as string;
-  // Extract ID from the end of the slug (e.g., "early-access-nft-drop-1" -> "1")
   const idMatch = slugParam.match(/(\d+)$/);
   if (!idMatch) {
     throw new Response('Invalid campaign URL', { status: 400 });
@@ -54,7 +53,6 @@ function Badge({
 export default function CampaignDetail() {
   const campaign = useLoaderData<any>();
 
-  // Determine border color based on priority: featured > isAd > isNew
   const borderColor = campaign.featured
     ? 'border-yellow-500'
     : campaign.isAd
@@ -110,10 +108,13 @@ export default function CampaignDetail() {
               </div>
             </div>
           </div>
-          <div className="backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 bg-[rgb(var(--primary))]">
-            <span className="text-2xl font-bold text-black-400">
+          <div className="bg-slate-800/50 backdrop-blur-sm px-6 py-4 rounded-lg border border-[rgb(var(--primary))] border-opacity-30 shadow-lg">
+            <div className="text-2xl font-semibold text-[rgb(var(--primary))] font-sans">
               {campaign.value}
-            </span>
+            </div>
+            <div className="text-sm text-slate-200 font-sans mt-1">
+              Total: ${campaign.totalAmount.toLocaleString()}
+            </div>
           </div>
         </div>
 
@@ -131,12 +132,14 @@ export default function CampaignDetail() {
                 </div>
               </section>
 
-              {/* Placeholder for Distribution */}
               <section>
                 <h2 className="text-2xl font-semibold mb-4 text-white">
-                  Reward Distribution
+                  Reward Details
                 </h2>
                 <div className="prose prose-invert max-w-none">
+                  <p className="text-slate-300">
+                    Total Amount: ${campaign.totalAmount.toLocaleString()}
+                  </p>
                   <p className="text-slate-300">
                     Distribution details coming soon. Stay tuned for updates on
                     how rewards will be allocated!
