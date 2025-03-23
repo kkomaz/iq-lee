@@ -29,6 +29,7 @@ build/
 
 # Ignore public build directory
 public/build/
+public/build/**
 
 # Ignore cache directory
 .cache/

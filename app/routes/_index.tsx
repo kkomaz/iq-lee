@@ -20,6 +20,13 @@ export const meta = () => {
       name: 'description',
       content: 'Discover exciting rewards and opportunities',
     },
+    // Add favicon link
+    {
+      tagName: 'link',
+      rel: 'icon',
+      type: 'image/svg+xml',
+      href: '/favicon.svg',
+    },
   ];
 };
 
