@@ -27,6 +27,12 @@ export const meta: MetaFunction = () => {
   return [
     { title },
     { name: 'description', content: description },
+    {
+      tagName: 'link',
+      rel: 'icon',
+      type: 'image/svg+xml',
+      href: '/favicon.svg',
+    },
     // Open Graph tags for social media sharing
     { property: 'og:title', content: title },
     { property: 'og:description', content: description },
@@ -75,7 +81,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       value: 'Contact Us',
       totalAmount: 0,
       email: 'IncentiveIQ@protonmail.com',
-      image: 'https://via.placeholder.com/150?text=Advertise',
+      image:
+        'https://pbs.twimg.com/profile_images/1903808850501001216/uqtpjb21_400x400.jpg',
     });
   }
 

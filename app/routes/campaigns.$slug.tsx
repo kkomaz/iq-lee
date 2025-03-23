@@ -39,6 +39,12 @@ export const meta: MetaFunction = ({ data }) => {
   return [
     { title },
     { name: 'description', content: description },
+    {
+      tagName: 'link',
+      rel: 'icon',
+      type: 'image/svg+xml',
+      href: '/favicon.svg',
+    },
     // Open Graph tags for social media sharing
     { property: 'og:title', content: title },
     { property: 'og:description', content: description },
