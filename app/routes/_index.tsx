@@ -5,6 +5,14 @@ import { Lamp } from '~/components/ui/lamp';
 import { Logo } from '~/components/ui/logo';
 import prisma from '~/lib/prisma.server';
 
+// Simple slugify function
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
 export const meta = () => {
   return [
     { title: 'KaitoRewards - Earn Rewards for Your Contributions' },
@@ -28,14 +36,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const nonAds = featuredCampaigns.filter((c) => !c.isAd);
   const sortedFeatured = [];
 
-  // Handle ad placement
   if (ads.length === 0) {
     sortedFeatured.push(...nonAds);
   } else if (ads.length === 1) {
-    // One ad goes to 4th position (index 3)
     sortedFeatured.push(...nonAds.slice(0, 3), ads[0], ...nonAds.slice(3));
   } else {
-    // Two or more ads go to 3rd and 4th positions (indices 2 and 3)
     sortedFeatured.push(
       ...nonAds.slice(0, 2),
       ads[0],
@@ -44,10 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  // Limit to 4 featured items if more exist
   const featuredRewards = sortedFeatured.slice(0, 4);
-
-  // All rewards exclude ads
   const rewards = campaigns.filter((c) => !c.isAd);
 
   return new Response(JSON.stringify({ rewards, featuredRewards }), {
@@ -78,19 +80,21 @@ function RewardCard({
   reward: any;
   showStatusBadges?: boolean;
 }) {
-  // Determine border class based on status when showStatusBadges is true
   const borderClass = showStatusBadges
     ? reward.isAd
-      ? 'border-2 border-blue-500 bg-gradient-to-r from-blue-500/20 to-transparent'
+      ? 'border-2 border-blue-500 bg-gradient-to-r from-blue-500/20 to-transparent hover:from-blue-500/30 hover:to-blue-500/10'
       : reward.featured
-      ? 'border-2 border-yellow-500 bg-gradient-to-r from-yellow-500/20 to-transparent'
+      ? 'border-2 border-yellow-500 bg-gradient-to-r from-yellow-500/20 to-transparent hover:from-yellow-500/30 hover:to-yellow-500/10'
       : 'border border-slate-800'
     : 'border border-slate-800';
 
   return (
-    <Link to={`/campaigns/${reward.id}`} className="block h-full">
+    <Link
+      to={`/campaigns/${slugify(reward.title)}-${reward.id}`}
+      className="block h-full"
+    >
       <div
-        className={`card hover :scale-[1.02] transition-all h-full bg-slate-900/50 backdrop-blur-sm ${borderClass}`}
+        className={`card hover:scale-[1.02] transition-all h-full bg-slate-900/50 backdrop-blur-sm ${borderClass}`}
       >
         <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full overflow-hidden border-4 border-slate-900 shadow-xl">
           <img
@@ -123,7 +127,7 @@ function RewardCard({
         </div>
         <p className="text-slate-300 mb-4 line-clamp-2">{reward.description}</p>
         <div className="text-2xl font-bold text-[rgb(var(--primary))] mb-4">
-          ${reward.value}
+          {reward.value}
         </div>
         <div className="flex items-center gap-2 text-slate-400">
           <Clock className="w-4 h-4" />
@@ -159,25 +163,11 @@ export default function Index() {
               <h1 className="text-4xl md:text-7xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500/80">
                 Discover Exclusive <br /> Rewards & Campaigns
               </h1>
-              <p className="mt-4 font-normal text-base text-slate-400 max-w-lg text-center mx-auto ">
+              <p className="mt-4 font-normal text-base text-slate-400 max-w-lg text-center mx-auto">
                 Stay ahead of the curve with KaitoRewards. Get early access to
                 upcoming campaigns, exclusive memberships, and unique
                 opportunities.
               </p>
-              <div className="mt-8 flex justify-center gap-4">
-                <Link
-                  to="/signup"
-                  className="px-6 py-3 bg-[rgb(var(--primary))] text-slate-950 rounded-lg font-medium hover:opacity-90 transition-all"
-                >
-                  Get Started
-                </Link>
-                <Link
-                  to="#featured"
-                  className="px-6 py-3 bg-white/5 text-white rounded-lg font-medium hover:bg-white/10 transition-all backdrop-blur-sm"
-                >
-                  View Rewards
-                </Link>
-              </div>
             </div>
           </div>
 
