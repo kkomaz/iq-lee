@@ -28,14 +28,22 @@ export const meta = () => {
 // Loader to fetch campaigns and enforce single-user access
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const allowedUserId = process.env.ALLOWED_PRIVY_USER_ID;
-  // Note: Privy user ID isn't directly available in loader; you'd typically use a session
-  // For simplicity, we'll enforce this in the component, but you could integrate server-side Privy auth here
-  const campaigns = await prisma.campaign.findMany({
-    orderBy: { createdAt: 'desc' },
-  });
-  return new Response(JSON.stringify({ campaigns, allowedUserId }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  try {
+    await prisma.$connect();
+    const campaigns = await prisma.campaign.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return new Response(JSON.stringify({ campaigns, allowedUserId }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error in admin loader:', error);
+    throw new Response('Failed to load campaigns. Please try again later.', {
+      status: 500,
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
 };
 
 // Action to handle create, update, and delete
@@ -55,6 +63,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const isAd = formData.get('isAd') === 'on';
     const isNew = formData.get('isNew') === 'on';
     const userId = formData.get('userId') as string;
+    const kaitoUrl = formData.get('kaitoUrl') as string; // New field
+    const companyUrl = formData.get('companyUrl') as string; // New field
+    const airdropUrl = formData.get('airdropUrl') as string; // New field
+    const xUrl = formData.get('xUrl') as string; // New field
 
     if (!title) {
       return new Response(
@@ -91,6 +103,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         isAd,
         isNew,
         userId,
+        kaitoUrl: kaitoUrl || null, // New field
+        companyUrl: companyUrl || null, // New field
+        airdropUrl: airdropUrl || null, // New field
+        xUrl: xUrl || null, // New field
       },
     });
 
@@ -112,6 +128,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const featured = formData.get('featured') === 'on';
     const isAd = formData.get('isAd') === 'on';
     const isNew = formData.get('isNew') === 'on';
+    const kaitoUrl = formData.get('kaitoUrl') as string; // New field
+    const companyUrl = formData.get('companyUrl') as string; // New field
+    const airdropUrl = formData.get('airdropUrl') as string; // New field
+    const xUrl = formData.get('xUrl') as string; // New field
 
     if (!id || !title) {
       return new Response(
@@ -136,6 +156,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         featured,
         isAd,
         isNew,
+        kaitoUrl: kaitoUrl || null, // New field
+        companyUrl: companyUrl || null, // New field
+        airdropUrl: airdropUrl || null, // New field
+        xUrl: xUrl || null, // New field
       },
     });
 
@@ -187,6 +211,25 @@ function Badge({
     >
       {children}
     </span>
+  );
+}
+
+export function ErrorBoundary({ error }) {
+  console.error('Admin ErrorBoundary caught:', error);
+  return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="bg-slate-900/50 backdrop-blur-sm p-8 rounded-lg shadow-xl border border-slate-800 max-w-md w-full text-center">
+        <h1 className="text-4xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500/80">
+          Error
+        </h1>
+        <p className="text-slate-300 mb-6">{error.message}</p>
+        <p className="text-slate-400">
+          <Link to="/" className="text-blue-400 hover:underline">
+            Back to Home
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -432,6 +475,71 @@ export default function Admin() {
                     placeholder="Enter image URL"
                   />
                 </div>
+                {/* New Fields */}
+                <div>
+                  <label
+                    htmlFor="kaitoUrl"
+                    className="block text-slate-300 text-sm font-medium mb-2"
+                  >
+                    Kaito URL (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="kaitoUrl"
+                    name="kaitoUrl"
+                    defaultValue={editingCampaign?.kaitoUrl}
+                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                    placeholder="Enter Kaito URL"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="companyUrl"
+                    className="block text-slate-300 text-sm font-medium mb-2"
+                  >
+                    Company URL (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="companyUrl"
+                    name="companyUrl"
+                    defaultValue={editingCampaign?.companyUrl}
+                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                    placeholder="Enter Company URL"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="airdropUrl"
+                    className="block text-slate-300 text-sm font-medium mb-2"
+                  >
+                    Airdrop URL (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="airdropUrl"
+                    name="airdropUrl"
+                    defaultValue={editingCampaign?.airdropUrl}
+                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                    placeholder="Enter Airdrop URL"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="xUrl"
+                    className="block text-slate-300 text-sm font-medium mb-2"
+                  >
+                    X URL (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="xUrl"
+                    name="xUrl"
+                    defaultValue={editingCampaign?.xUrl}
+                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                    placeholder="Enter X URL"
+                  />
+                </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="flex items-center gap-2">
                     <input
@@ -552,6 +660,61 @@ export default function Admin() {
                         </span>{' '}
                         • <span>Value: {campaign.value}</span> •{' '}
                         <span>Total Amount: {campaign.totalAmount}</span>
+                      </div>
+                      {/* Display New Fields */}
+                      <div className="text-sm text-slate-400 mt-1">
+                        {campaign.kaitoUrl && (
+                          <div>
+                            Kaito URL:{' '}
+                            <a
+                              href={campaign.kaitoUrl}
+                              className="text-blue-400 hover:underline"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {campaign.kaitoUrl}
+                            </a>
+                          </div>
+                        )}
+                        {campaign.companyUrl && (
+                          <div>
+                            Company URL:{' '}
+                            <a
+                              href={campaign.companyUrl}
+                              className="text-blue-400 hover:underline"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {campaign.companyUrl}
+                            </a>
+                          </div>
+                        )}
+                        {campaign.airdropUrl && (
+                          <div>
+                            Airdrop URL:{' '}
+                            <a
+                              href={campaign.airdropUrl}
+                              className="text-blue-400 hover:underline"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {campaign.airdropUrl}
+                            </a>
+                          </div>
+                        )}
+                        {campaign.xUrl && (
+                          <div>
+                            X URL:{' '}
+                            <a
+                              href={campaign.xUrl}
+                              className="text-blue-400 hover:underline"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {campaign.xUrl}
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 ml-4">
