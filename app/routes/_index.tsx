@@ -10,6 +10,7 @@ import {
 import { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import { Lamp } from '~/components/ui/lamp';
 import { Logo } from '~/components/ui/logo';
+import { SocialIcons } from '~/components/SocialIcons'; // Import the new component
 import prisma from '~/lib/prisma.server';
 import { useEffect, useState, useRef } from 'react';
 
@@ -21,7 +22,7 @@ export const meta: MetaFunction = () => {
   const description =
     'Discover exciting rewards and opportunities with IncentiveIQ';
   const url = BASE_URL;
-  const image = `${BASE_URL}/og-image.jpg`; // Default og-image
+  const image = `${BASE_URL}/og-image.jpg`;
 
   return [
     { title },
@@ -50,15 +51,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Fetch up to 2 featured campaigns (non-ads)
   const featuredCampaigns = campaigns
     .filter((c) => c.featured && !c.isAd)
     .slice(0, 2);
 
-  // Fetch up to 2 ad campaigns
   const adCampaigns = campaigns.filter((c) => c.isAd).slice(0, 2);
 
-  // Combine into a list of 4, with ads in 3rd and 4th positions
   const sortedFeatured = [];
   sortedFeatured.push(...featuredCampaigns);
 
@@ -84,7 +82,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const featuredRewards = sortedFeatured.slice(0, 4);
   let rewards = campaigns.filter((c) => !c.isAd);
 
-  // Filter rewards based on search term
   if (searchTerm) {
     rewards = rewards.filter(
       (c) =>
@@ -93,7 +90,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  // Sort rewards based on sortBy and sortOrder
   if (sortBy === 'latest') {
     rewards.sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
@@ -240,7 +236,6 @@ export default function Index() {
   const scrollPositionRef = useRef(0);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update search term and sort state from URL on initial load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const search = params.get('search') || '';
@@ -251,21 +246,18 @@ export default function Index() {
     setSortOrder(sortOrderParam);
   }, []);
 
-  // Save scroll position before navigation
   useEffect(() => {
     if (navigation.state === 'submitting') {
       scrollPositionRef.current = window.scrollY;
     }
   }, [navigation.state]);
 
-  // Restore scroll position after navigation
   useEffect(() => {
     if (navigation.state === 'idle') {
       window.scrollTo(0, scrollPositionRef.current);
     }
   }, [navigation.state, location]);
 
-  // Handle search input change with debouncing
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setSearchTerm(value);
@@ -283,7 +275,6 @@ export default function Index() {
     }, 300);
   };
 
-  // Handle sort button clicks
   const handleSortChange = (newSortBy: string) => {
     let newSortOrder = sortOrder;
     if (sortBy === newSortBy) {
@@ -302,7 +293,6 @@ export default function Index() {
     submit(formData, { method: 'get', replace: true });
   };
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {
@@ -315,8 +305,9 @@ export default function Index() {
     <div className="min-h-screen bg-slate-950">
       <header className="absolute top-0 left-0 right-0 z-50">
         <div className="container mx-auto px-4">
-          <div className="h-24 flex items-center">
+          <div className="h-24 flex items-center justify-between">
             <Logo />
+            <SocialIcons /> {/* Add SocialIcons to the top right */}
           </div>
         </div>
       </header>

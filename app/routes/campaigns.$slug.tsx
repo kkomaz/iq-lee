@@ -2,6 +2,7 @@ import { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import { Link, useLoaderData } from '@remix-run/react';
 import { ArrowLeft, Clock } from 'lucide-react';
 import prisma from '~/lib/prisma.server';
+import { SocialIcons } from '~/components/SocialIcons'; // Import the new component
 
 // Base URL for your app (replace with your actual domain)
 const BASE_URL = 'https://incentiveiq.com';
@@ -164,7 +165,7 @@ export default function CampaignDetail() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       <div className="mx-auto max-w-6xl px-6 py-8 flex-1">
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center justify-between mb-8">
           <Link
             to="/"
             className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
@@ -172,6 +173,7 @@ export default function CampaignDetail() {
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Campaigns</span>
           </Link>
+          <SocialIcons /> {/* Add SocialIcons to the top right */}
         </div>
 
         <div className="flex items-center justify-between mb-8">
