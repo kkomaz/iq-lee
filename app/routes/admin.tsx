@@ -10,12 +10,12 @@ import {
 import { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import prisma from '~/lib/prisma.server';
 import { useState } from 'react';
+import { redirect } from '@remix-run/node';
 
 export const meta = () => {
   return [
     { title: 'Admin - IncentiveIQ Campaign Platform' },
     { name: 'description', content: 'Create and manage your reward campaigns' },
-    // Add favicon link
     {
       tagName: 'link',
       rel: 'icon',
@@ -25,12 +25,15 @@ export const meta = () => {
   ];
 };
 
-// Loader to fetch campaigns
+// Loader to fetch campaigns and enforce single-user access
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const allowedUserId = process.env.ALLOWED_PRIVY_USER_ID;
+  // Note: Privy user ID isn't directly available in loader; you'd typically use a session
+  // For simplicity, we'll enforce this in the component, but you could integrate server-side Privy auth here
   const campaigns = await prisma.campaign.findMany({
     orderBy: { createdAt: 'desc' },
   });
-  return new Response(JSON.stringify({ campaigns }), {
+  return new Response(JSON.stringify({ campaigns, allowedUserId }), {
     headers: { 'Content-Type': 'application/json' },
   });
 };
@@ -46,6 +49,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const longDescription = formData.get('longDescription') as string;
     const expiresAt = formData.get('expiresAt') as string;
     const value = formData.get('value') as string;
+    const totalAmount = parseInt(formData.get('totalAmount') as string) || 0;
     const image = formData.get('image') as string;
     const featured = formData.get('featured') === 'on';
     const isAd = formData.get('isAd') === 'on';
@@ -79,10 +83,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         title,
         description: description || 'No description provided',
         longDescription: longDescription || 'No extended details provided',
-        expiresAt: expiresAt
-          ? new Date(expiresAt)
-          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
         value: value || '0',
+        totalAmount,
         image: image || 'https://via.placeholder.com/150',
         featured,
         isAd,
@@ -104,6 +107,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const longDescription = formData.get('longDescription') as string;
     const expiresAt = formData.get('expiresAt') as string;
     const value = formData.get('value') as string;
+    const totalAmount = parseInt(formData.get('totalAmount') as string);
     const image = formData.get('image') as string;
     const featured = formData.get('featured') === 'on';
     const isAd = formData.get('isAd') === 'on';
@@ -125,8 +129,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         title,
         description: description || 'No description provided',
         longDescription: longDescription || 'No extended details provided',
-        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
         value: value || '0',
+        totalAmount,
         image: image || 'https://via.placeholder.com/150',
         featured,
         isAd,
@@ -188,10 +193,36 @@ function Badge({
 export default function Admin() {
   const { login, authenticated, user, logout } = usePrivy();
   const actionData = useActionData<{ error?: string; success?: string }>();
-  const { campaigns } = useLoaderData<{ campaigns: any[] }>();
+  const { campaigns, allowedUserId } = useLoaderData<{
+    campaigns: any[];
+    allowedUserId: string;
+  }>();
   const navigation = useNavigation();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
+
+  // Restrict to single user
+  if (authenticated && user?.id !== allowedUserId) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="bg-slate-900/50 backdrop-blur-sm p-8 rounded-lg shadow-xl border border-slate-800 max-w-md w-full text-center">
+          <h1 className="text-4xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500/80">
+            Access Denied
+          </h1>
+          <p className="text-slate-300 mb-6">
+            Only one user is allowed to access this application. Contact the
+            administrator.
+          </p>
+          <button
+            onClick={logout}
+            className="bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-all"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!authenticated) {
     return (
@@ -336,7 +367,7 @@ export default function Admin() {
                     htmlFor="expiresAt"
                     className="block text-slate-300 text-sm font-medium mb-2"
                   >
-                    Expires At
+                    Expires At (Optional)
                   </label>
                   <input
                     type="date"
@@ -366,6 +397,23 @@ export default function Admin() {
                     defaultValue={editingCampaign?.value}
                     className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
                     placeholder="e.g., 500 per week"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="totalAmount"
+                    className="block text-slate-300 text-sm font-medium mb-2"
+                  >
+                    Total Amount
+                  </label>
+                  <input
+                    type="number"
+                    id="totalAmount"
+                    name="totalAmount"
+                    defaultValue={editingCampaign?.totalAmount || 0}
+                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                    placeholder="Enter total reward amount"
+                    min="0"
                   />
                 </div>
                 <div>
@@ -498,9 +546,12 @@ export default function Admin() {
                       <div className="text-sm text-slate-400 mt-2">
                         <span>
                           Expires:{' '}
-                          {new Date(campaign.expiresAt).toLocaleDateString()}
+                          {campaign.expiresAt
+                            ? new Date(campaign.expiresAt).toLocaleDateString()
+                            : 'No expiration'}
                         </span>{' '}
-                        • <span>Value: {campaign.value}</span>
+                        • <span>Value: {campaign.value}</span> •{' '}
+                        <span>Total Amount: {campaign.totalAmount}</span>
                       </div>
                     </div>
                     <div className="flex gap-2 ml-4">

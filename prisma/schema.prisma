@@ -17,17 +17,17 @@ model User {
 
 model Campaign {
   id             Int      @id @default(autoincrement())
-  title          String   // Renamed from 'name'
-  description    String   // Short description
-  longDescription String   // Added
-  expiresAt      DateTime // Added
-  value          String   // Added
-  totalAmount    Int      // New field for total reward amount
-  image          String   // Added
-  featured       Boolean  @default(false) // Added
-  isNew          Boolean  @default(false) // Added
-  isAd           Boolean  @default(false) // Added
-  userId         String   // Foreign key to User
+  title          String
+  description    String
+  longDescription String
+  expiresAt      DateTime? // Changed from DateTime to DateTime? to allow null
+  value          String
+  totalAmount    Int
+  image          String
+  featured       Boolean  @default(false)
+  isNew          Boolean  @default(false)
+  isAd           Boolean  @default(false)
+  userId         String
   user           User     @relation(fields: [userId], references: [id])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

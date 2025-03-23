@@ -212,7 +212,10 @@ function RewardCard({
             <>
               <Clock className="w-4 h-4" />
               <span>
-                Expires: {new Date(reward.expiresAt).toLocaleDateString()}
+                Expires:{' '}
+                {reward.expiresAt
+                  ? new Date(reward.expiresAt).toLocaleDateString()
+                  : 'N/A'}
               </span>
             </>
           )}
