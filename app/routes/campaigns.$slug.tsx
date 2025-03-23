@@ -3,6 +3,9 @@ import { Link, useLoaderData } from '@remix-run/react';
 import { ArrowLeft, Clock } from 'lucide-react';
 import prisma from '~/lib/prisma.server';
 
+// Base URL for your app (replace with your actual domain)
+const BASE_URL = 'https://incentiveiq.com';
+
 // Define the meta function to accept the data from the loader
 export const meta: MetaFunction = ({ data }) => {
   const campaign = data?.campaign;
@@ -13,40 +16,39 @@ export const meta: MetaFunction = ({ data }) => {
     ? `Join the ${campaign.title} campaign on IncentiveIQ and earn rewards worth ${campaign.value}. Learn more and participate now!`
     : 'Learn more about this campaign and how to participate';
 
+  // Slugify the campaign title for the URL
+  const slugify = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  const campaignUrl = campaign
+    ? `${BASE_URL}/campaigns/${slugify(campaign.title)}-${campaign.id}`
+    : BASE_URL;
+
+  // Ensure image URLs are absolute
+  const campaignImage = campaign?.image?.startsWith('http')
+    ? campaign.image
+    : campaign?.image
+    ? `${BASE_URL}${campaign.image}`
+    : null;
+  const defaultImage = `${BASE_URL}/og-image.jpg`;
+  const image = campaignImage || defaultImage;
+
   return [
     { title },
     { name: 'description', content: description },
-    // Add Open Graph tags for social media sharing
+    // Open Graph tags for social media sharing
     { property: 'og:title', content: title },
     { property: 'og:description', content: description },
     { property: 'og:type', content: 'website' },
-    {
-      property: 'og:url',
-      content: `https://incentiveiq.com/campaigns/${
-        campaign ? `${campaign.title}-${campaign.id}` : ''
-      }`,
-    }, // Adjust the domain to your actual domain
-    {
-      property: 'og:image',
-      content:
-        campaign?.image || 'https://incentiveiq.com/default-og-image.jpg',
-    }, // Use campaign image or a default
-    // Add Twitter Card tags
+    { property: 'og:url', content: campaignUrl },
+    { property: 'og:image', content: image },
+    // Twitter Card tags
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:title', content: title },
     { name: 'twitter:description', content: description },
-    {
-      name: 'twitter:image',
-      content:
-        campaign?.image || 'https://incentiveiq.com/default-og-image.jpg',
-    },
-    // Favicon (already moved to root.tsx, so can be removed here if desired)
-    {
-      tagName: 'link',
-      rel: 'icon',
-      type: 'image/svg+xml',
-      href: '/favicon.svg',
-    },
+    { name: 'twitter:image', content: image },
   ];
 };
 

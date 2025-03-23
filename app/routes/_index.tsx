@@ -7,37 +7,47 @@ import {
   useNavigation,
   useLocation,
 } from '@remix-run/react';
-import { LoaderFunctionArgs } from '@remix-run/node';
+import { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import { Lamp } from '~/components/ui/lamp';
 import { Logo } from '~/components/ui/logo';
 import prisma from '~/lib/prisma.server';
 import { useEffect, useState, useRef } from 'react';
 
-export const meta = () => {
+// Base URL for your app (replace with your actual domain)
+const BASE_URL = 'https://incentiveiq.com';
+
+export const meta: MetaFunction = () => {
+  const title = 'IncentiveIQ - Earn Rewards for Your Contributions';
+  const description =
+    'Discover exciting rewards and opportunities with IncentiveIQ';
+  const url = BASE_URL;
+  const image = `${BASE_URL}/og-image.jpg`; // Default og-image
+
   return [
-    { title: 'IncentiveIQ - Earn Rewards for Your Contributions' },
-    {
-      name: 'description',
-      content: 'Discover exciting rewards and opportunities',
-    },
-    // Add favicon link
-    {
-      tagName: 'link',
-      rel: 'icon',
-      type: 'image/svg+xml',
-      href: '/favicon.svg',
-    },
+    { title },
+    { name: 'description', content: description },
+    // Open Graph tags for social media sharing
+    { property: 'og:title', content: title },
+    { property: 'og:description', content: description },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: url },
+    { property: 'og:image', content: image },
+    // Twitter Card tags
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: title },
+    { name: 'twitter:description', content: description },
+    { name: 'twitter:image', content: image },
   ];
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get('search')?.toLowerCase() || '';
-  const sortBy = url.searchParams.get('sortBy') || 'latest'; // Default to 'latest'
-  const sortOrder = url.searchParams.get('sortOrder') || 'desc'; // Default to 'desc'
+  const sortBy = url.searchParams.get('sortBy') || 'latest';
+  const sortOrder = url.searchParams.get('sortOrder') || 'desc';
 
   const campaigns = await prisma.campaign.findMany({
-    orderBy: { createdAt: 'desc' }, // Initial fetch order
+    orderBy: { createdAt: 'desc' },
   });
 
   // Fetch up to 2 featured campaigns (non-ads)
@@ -67,8 +77,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       value: 'Contact Us',
       totalAmount: 0,
       email: 'IncentiveIQ@protonmail.com',
-      image:
-        'https://pbs.twimg.com/profile_images/1903808850501001216/uqtpjb21_400x400.jpg',
+      image: 'https://via.placeholder.com/150?text=Advertise',
     });
   }
 
@@ -93,7 +102,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   } else if (sortBy === 'value') {
     rewards.sort((a, b) => {
-      // Parse value (e.g., "$500 per week" -> 500)
       const valueA = parseFloat(a.value.replace(/[^0-9.]/g, '')) || 0;
       const valueB = parseFloat(b.value.replace(/[^0-9.]/g, '')) || 0;
       return sortOrder === 'desc' ? valueB - valueA : valueA - valueB;
@@ -279,10 +287,8 @@ export default function Index() {
   const handleSortChange = (newSortBy: string) => {
     let newSortOrder = sortOrder;
     if (sortBy === newSortBy) {
-      // Toggle sort order if clicking the same button
       newSortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
     } else {
-      // Default to descending for new sort type
       newSortOrder = 'desc';
     }
 
@@ -323,7 +329,7 @@ export default function Index() {
                 Discover Exclusive <br /> Rewards & Campaigns
               </h1>
               <p className="mt-4 font-normal text-base text-slate-400 max-w-lg text-center mx-auto">
-                Stay ahead of the curve with IncentiveIQ. Get early access to
+                Stay ahead of the curve with KaitoRewards. Get early access to
                 upcoming campaigns, exclusive memberships, and unique
                 opportunities.
               </p>
