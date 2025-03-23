@@ -334,7 +334,7 @@ export default function Index() {
                 upcoming campaigns, exclusive memberships, and unique
                 opportunities.
               </p>
-              <div className="mt-8 flex justify-center gap-4">
+              {/* <div className="mt-8 flex justify-center gap-4">
                 <Link
                   to="/signup"
                   className="px-6 py-3 bg-[rgb(var(--primary))] text-slate-950 rounded-lg font-medium hover:opacity-90 transition-all"
@@ -347,7 +347,7 @@ export default function Index() {
                 >
                   View Rewards
                 </Link>
-              </div>
+              </div> */}
             </div>
           </div>
 
