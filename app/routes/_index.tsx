@@ -20,28 +20,41 @@ export async function loader({ request }: LoaderFunctionArgs) {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Filter featured campaigns (featured or isAd)
-  const featuredCampaigns = campaigns.filter((c) => c.featured || c.isAd);
+  // Fetch up to 2 featured campaigns (non-ads)
+  const featuredCampaigns = campaigns
+    .filter((c) => c.featured && !c.isAd)
+    .slice(0, 2);
 
-  // Sort featured campaigns: non-ads first, then ads (up to 2) at 3rd/4th positions
-  const ads = featuredCampaigns.filter((c) => c.isAd);
-  const nonAds = featuredCampaigns.filter((c) => !c.isAd);
+  // Fetch up to 2 ad campaigns
+  const adCampaigns = campaigns.filter((c) => c.isAd).slice(0, 2);
+
+  // Combine into a list of 4, with ads in 3rd and 4th positions
   const sortedFeatured = [];
+  // Add featured campaigns (up to 2)
+  sortedFeatured.push(...featuredCampaigns);
 
-  if (ads.length === 0) {
-    sortedFeatured.push(...nonAds);
-  } else if (ads.length === 1) {
-    sortedFeatured.push(...nonAds.slice(0, 3), ads[0], ...nonAds.slice(3));
-  } else {
-    sortedFeatured.push(
-      ...nonAds.slice(0, 2),
-      ads[0],
-      ads[1],
-      ...nonAds.slice(2)
-    );
+  // Add ad campaigns (up to 2)
+  const adSpots = 2; // We want 2 ad spots
+  const adCount = adCampaigns.length;
+  sortedFeatured.push(...adCampaigns);
+
+  // If fewer than 2 ad campaigns, fill with placeholders
+  const placeholdersNeeded = adSpots - adCount;
+  for (let i = 0; i < placeholdersNeeded; i++) {
+    sortedFeatured.push({
+      id: `placeholder-${i}`,
+      isPlaceholder: true,
+      title: 'Advertise with Us!',
+      description:
+        'Reach thousands of engaged users by showcasing your campaign here.',
+      value: 'Contact us for details',
+      totalAmount: 0,
+      expiresAt: new Date('2025-12-31').toISOString(),
+      image: 'https://via.placeholder.com/150?text=Advertise',
+    });
   }
 
-  const featuredRewards = sortedFeatured.slice(0, 4);
+  const featuredRewards = sortedFeatured.slice(0, 4); // Ensure exactly 4 items
   const rewards = campaigns.filter((c) => !c.isAd);
 
   return new Response(JSON.stringify({ rewards, featuredRewards }), {
@@ -72,7 +85,10 @@ function RewardCard({
   reward: any;
   showStatusBadges?: boolean;
 }) {
-  const borderClass = showStatusBadges
+  // Apply blue border for ads and placeholders, yellow for featured, default otherwise
+  const borderClass = reward.isPlaceholder
+    ? 'border-2 border-blue-500 bg-gradient-to-r from-blue-500/20 to-transparent hover:from-blue-500/30 hover:to-blue-500/10'
+    : showStatusBadges
     ? reward.isAd
       ? 'border-2 border-blue-500 bg-gradient-to-r from-blue-500/20 to-transparent hover:from-blue-500/30 hover:to-blue-500/10'
       : reward.featured
@@ -82,7 +98,11 @@ function RewardCard({
 
   return (
     <Link
-      to={`/campaigns/${slugify(reward.title)}-${reward.id}`}
+      to={
+        reward.isPlaceholder
+          ? '/contact'
+          : `/campaigns/${slugify(reward.title)}-${reward.id}`
+      }
       className="block h-full"
     >
       <div
@@ -99,17 +119,17 @@ function RewardCard({
           <div className="flex flex-col gap-2">
             <h3 className="text-xl font-bold text-white">{reward.title}</h3>
             <div className="flex gap-2">
-              {showStatusBadges && reward.featured && (
+              {showStatusBadges && !reward.isPlaceholder && reward.featured && (
                 <Badge className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
                   Featured
                 </Badge>
               )}
-              {reward.isNew && (
+              {showStatusBadges && !reward.isPlaceholder && reward.isNew && (
                 <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                   New
                 </Badge>
               )}
-              {showStatusBadges && reward.isAd && (
+              {showStatusBadges && !reward.isPlaceholder && reward.isAd && (
                 <Badge className="bg-blue-500/10 text-blue-500 border border-blue-500/20">
                   Ad
                 </Badge>
@@ -120,10 +140,10 @@ function RewardCard({
         <p className="text-slate-300 mb-4 line-clamp-2">{reward.description}</p>
         <div className="flex items-baseline gap-2 mb-4">
           <div className="text-2xl font-bold text-[rgb(var(--primary))]">
-            ${reward.value}
+            {reward.value}
           </div>
           <div className="text-sm text-emerald-300">
-            (est. total ~ ${reward.totalAmount.toLocaleString()})
+            (Est. ${reward.totalAmount.toLocaleString()})
           </div>
         </div>
         <div className="flex items-center gap-2 text-slate-400">
@@ -190,9 +210,7 @@ export default function Index() {
           </div>
 
           <div className="mb-12" id="featured">
-            <h2 className="text-2xl font-bold mb-6 text-white">
-              Featured Campaigns
-            </h2>
+            <h2 className="text-2xl font-bold mb-6 text-white">Our Picks</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredRewards.length === 0 ? (
                 <p className="text-slate-400 col-span-full text-center">
