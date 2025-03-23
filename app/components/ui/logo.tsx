@@ -1,4 +1,4 @@
-import { Link } from "@remix-run/react";
+import { Link } from '@remix-run/react';
 
 export function Logo() {
   return (
@@ -33,7 +33,7 @@ export function Logo() {
         </g>
       </svg>
       <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500/80">
-        KaitoRewards
+        IncentiveIQ
       </span>
     </Link>
   );

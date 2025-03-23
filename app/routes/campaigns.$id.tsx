@@ -4,7 +4,7 @@ import { ArrowLeft, Clock, Trophy } from 'lucide-react';
 
 export const meta = () => {
   return [
-    { title: 'Campaign Details - KaitoRewards' },
+    { title: 'Campaign Details - IncentiveIQ' },
     {
       name: 'description',
       content: 'Learn more about this campaign and how to participate',

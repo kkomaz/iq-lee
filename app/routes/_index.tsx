@@ -15,7 +15,7 @@ import { useEffect, useState, useRef } from 'react';
 
 export const meta = () => {
   return [
-    { title: 'KaitoRewards - Earn Rewards for Your Contributions' },
+    { title: 'IncentiveIQ - Earn Rewards for Your Contributions' },
     {
       name: 'description',
       content: 'Discover exciting rewards and opportunities',
@@ -60,7 +60,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       value: 'Contact Us',
       totalAmount: 0,
       email: 'IncentiveIQ@protonmail.com',
-      image: 'https://via.placeholder.com/150?text=Advertise',
+      image:
+        'https://pbs.twimg.com/profile_images/1903808850501001216/uqtpjb21_400x400.jpg',
     });
   }
 
@@ -315,7 +316,7 @@ export default function Index() {
                 Discover Exclusive <br /> Rewards & Campaigns
               </h1>
               <p className="mt-4 font-normal text-base text-slate-400 max-w-lg text-center mx-auto">
-                Stay ahead of the curve with KaitoRewards. Get early access to
+                Stay ahead of the curve with IncentiveIQ. Get early access to
                 upcoming campaigns, exclusive memberships, and unique
                 opportunities.
               </p>

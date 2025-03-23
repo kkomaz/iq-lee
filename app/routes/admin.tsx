@@ -13,7 +13,7 @@ import { useState } from 'react';
 
 export const meta = () => {
   return [
-    { title: 'Admin - KaitoRewards Campaign Platform' },
+    { title: 'Admin - IncentiveIQ Campaign Platform' },
     { name: 'description', content: 'Create and manage your reward campaigns' },
   ];
 };
