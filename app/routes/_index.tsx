@@ -33,6 +33,12 @@ export const meta: MetaFunction = () => {
       type: 'image/svg+xml',
       href: '/favicon.svg',
     },
+    {
+      tagName: 'link',
+      rel: 'icon',
+      type: 'image/png',
+      href: '/favicon.png',
+    },
     // Open Graph tags for social media sharing
     { property: 'og:title', content: title },
     { property: 'og:description', content: description },
