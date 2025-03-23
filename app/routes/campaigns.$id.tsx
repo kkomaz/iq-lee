@@ -9,6 +9,12 @@ export const meta = () => {
       name: 'description',
       content: 'Learn more about this campaign and how to participate',
     },
+    {
+      tagName: 'link',
+      rel: 'icon',
+      type: 'image/svg+xml',
+      href: '/favicon.svg',
+    },
   ];
 };
 

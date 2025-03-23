@@ -15,6 +15,13 @@ export const meta = () => {
   return [
     { title: 'Admin - IncentiveIQ Campaign Platform' },
     { name: 'description', content: 'Create and manage your reward campaigns' },
+    // Add favicon link
+    {
+      tagName: 'link',
+      rel: 'icon',
+      type: 'image/svg+xml',
+      href: '/favicon.svg',
+    },
   ];
 };
 

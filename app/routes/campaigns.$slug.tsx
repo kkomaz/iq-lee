@@ -1,14 +1,51 @@
-import { LoaderFunctionArgs } from '@remix-run/node';
+import { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import { Link, useLoaderData } from '@remix-run/react';
 import { ArrowLeft, Clock } from 'lucide-react';
 import prisma from '~/lib/prisma.server';
 
-export const meta = () => {
+// Define the meta function to accept the data from the loader
+export const meta: MetaFunction = ({ data }) => {
+  const campaign = data?.campaign;
+  const title = campaign
+    ? `${campaign.title} - IncentiveIQ`
+    : 'IncentiveIQ - Campaign Details';
+  const description = campaign
+    ? `Join the ${campaign.title} campaign on IncentiveIQ and earn rewards worth ${campaign.value}. Learn more and participate now!`
+    : 'Learn more about this campaign and how to participate';
+
   return [
-    { title: 'Campaign Details - IncentiveIQ' },
+    { title },
+    { name: 'description', content: description },
+    // Add Open Graph tags for social media sharing
+    { property: 'og:title', content: title },
+    { property: 'og:description', content: description },
+    { property: 'og:type', content: 'website' },
     {
-      name: 'description',
-      content: 'Learn more about this campaign and how to participate',
+      property: 'og:url',
+      content: `https://incentiveiq.com/campaigns/${
+        campaign ? `${campaign.title}-${campaign.id}` : ''
+      }`,
+    }, // Adjust the domain to your actual domain
+    {
+      property: 'og:image',
+      content:
+        campaign?.image || 'https://incentiveiq.com/default-og-image.jpg',
+    }, // Use campaign image or a default
+    // Add Twitter Card tags
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: title },
+    { name: 'twitter:description', content: description },
+    {
+      name: 'twitter:image',
+      content:
+        campaign?.image || 'https://incentiveiq.com/default-og-image.jpg',
+    },
+    // Favicon (already moved to root.tsx, so can be removed here if desired)
+    {
+      tagName: 'link',
+      rel: 'icon',
+      type: 'image/svg+xml',
+      href: '/favicon.svg',
     },
   ];
 };
@@ -29,7 +66,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw new Response('Campaign not found', { status: 404 });
   }
 
-  // Fetch 2 random campaigns, excluding the current one and ads
   const randomCampaigns = await prisma.$queryRaw`
     SELECT * FROM "Campaign"
     WHERE id != ${campaignId} AND "isAd" = false
@@ -88,7 +124,6 @@ function CampaignCard({ campaign }: { campaign: any }) {
         <div className="flex justify-between items-start mb-3">
           <div className="flex flex-col gap-2">
             <h3 className="text-xl font-bold text-white">{campaign.title}</h3>
-            {/* Removed badges for Explore More Campaigns section */}
           </div>
         </div>
         <p className="text-slate-300 mb-4 line-clamp-2">
