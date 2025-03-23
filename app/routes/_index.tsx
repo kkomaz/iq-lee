@@ -1,8 +1,9 @@
-import { json, LoaderFunctionArgs } from '@remix-run/node';
-import { Link, useLoaderData } from '@remix-run/react';
 import { Clock } from 'lucide-react';
+import { Link, useLoaderData } from '@remix-run/react';
+import { LoaderFunctionArgs } from '@remix-run/node';
 import { Lamp } from '~/components/ui/lamp';
 import { Logo } from '~/components/ui/logo';
+import prisma from '~/lib/prisma.server';
 
 export const meta = () => {
   return [
@@ -15,104 +16,43 @@ export const meta = () => {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const response = new Response();
-  const testData = {
-    rewards: [
-      {
-        id: '1',
-        title: 'Early Access NFT Drop',
-        description:
-          'Get exclusive early access to our upcoming NFT collection',
-        expires_at: '2025-04-01',
-        value: '500 per week',
-        image:
-          'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&auto=format&fit=crop&q=60',
-        featured: true,
-        isNew: true,
-      },
-      {
-        id: '2',
-        title: 'Community Moderator Role',
-        description: 'Become a moderator in our growing community',
-        expires_at: '2025-03-28',
-        value: '500 per week',
-        image:
-          'https://images.unsplash.com/photo-1528901166007-3784c7dd3653?w=800&auto=format&fit=crop&q=60',
-        featured: true,
-        isNew: true,
-      },
-      {
-        id: '3',
-        title: 'Premium Membership',
-        description: '1-year premium membership with exclusive benefits',
-        expires_at: '2025-03-25',
-        value: '500 per week',
-        image:
-          'https://images.unsplash.com/photo-1614849963640-9cc74b2a826f?w=800&auto=format&fit=crop&q=60',
-        featured: true,
-        isAd: true,
-      },
-      {
-        id: '4',
-        title: 'Limited Edition Merch',
-        description: 'Exclusive merchandise only for reward holders',
-        expires_at: '2025-04-15',
-        value: '500 per week',
-        image:
-          'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=60',
-        featured: false,
-      },
-      {
-        id: '5',
-        title: 'VIP Gaming Tournament',
-        description:
-          'Participate in our exclusive gaming tournament with pro players',
-        expires_at: '2025-04-20',
-        value: '500 per week',
-        image:
-          'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=60',
-        featured: true,
-        isNew: true,
-      },
-      {
-        id: '6',
-        title: 'Crypto Trading Course',
-        description: 'Learn advanced crypto trading strategies from experts',
-        expires_at: '2025-04-10',
-        value: 450,
-        image:
-          'https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=800&auto=format&fit=crop&q=60',
-        featured: true,
-        isAd: true,
-      },
-      {
-        id: '7',
-        title: 'Exclusive Discord Access',
-        description: 'Join our private Discord channels with industry leaders',
-        expires_at: '2025-04-05',
-        value: 200,
-        image:
-          'https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?w=800&auto=format&fit=crop&q=60',
-        featured: false,
-      },
-      {
-        id: '8',
-        title: 'AI Workshop Series',
-        description:
-          'Hands-on workshops about artificial intelligence and machine learning',
-        expires_at: '2025-04-30',
-        value: 800,
-        image:
-          'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop&q=60',
-        featured: false,
-      },
-    ],
-  };
+  const campaigns = await prisma.campaign.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
 
-  const featuredRewards = testData.rewards.filter((reward) => reward.featured);
-  const rewards = testData.rewards;
+  // Filter featured campaigns (featured or isAd)
+  const featuredCampaigns = campaigns.filter((c) => c.featured || c.isAd);
 
-  return json({ rewards, featuredRewards }, { headers: response.headers });
+  // Sort featured campaigns: non-ads first, then ads (up to 2) at 3rd/4th positions
+  const ads = featuredCampaigns.filter((c) => c.isAd);
+  const nonAds = featuredCampaigns.filter((c) => !c.isAd);
+  const sortedFeatured = [];
+
+  // Handle ad placement
+  if (ads.length === 0) {
+    sortedFeatured.push(...nonAds);
+  } else if (ads.length === 1) {
+    // One ad goes to 4th position (index 3)
+    sortedFeatured.push(...nonAds.slice(0, 3), ads[0], ...nonAds.slice(3));
+  } else {
+    // Two or more ads go to 3rd and 4th positions (indices 2 and 3)
+    sortedFeatured.push(
+      ...nonAds.slice(0, 2),
+      ads[0],
+      ads[1],
+      ...nonAds.slice(2)
+    );
+  }
+
+  // Limit to 4 featured items if more exist
+  const featuredRewards = sortedFeatured.slice(0, 4);
+
+  // All rewards exclude ads
+  const rewards = campaigns.filter((c) => !c.isAd);
+
+  return new Response(JSON.stringify({ rewards, featuredRewards }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 function Badge({
@@ -131,10 +71,27 @@ function Badge({
   );
 }
 
-function RewardCard({ reward }: { reward: any }) {
+function RewardCard({
+  reward,
+  showStatusBadges = false,
+}: {
+  reward: any;
+  showStatusBadges?: boolean;
+}) {
+  // Determine border class based on status when showStatusBadges is true
+  const borderClass = showStatusBadges
+    ? reward.isAd
+      ? 'border-2 border-blue-500 bg-gradient-to-r from-blue-500/20 to-transparent'
+      : reward.featured
+      ? 'border-2 border-yellow-500 bg-gradient-to-r from-yellow-500/20 to-transparent'
+      : 'border border-slate-800'
+    : 'border border-slate-800';
+
   return (
     <Link to={`/campaigns/${reward.id}`} className="block h-full">
-      <div className="card hover:scale-[1.02] transition-all h-full bg-slate-900/50 backdrop-blur-sm border border-slate-800">
+      <div
+        className={`card hover :scale-[1.02] transition-all h-full bg-slate-900/50 backdrop-blur-sm ${borderClass}`}
+      >
         <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full overflow-hidden border-4 border-slate-900 shadow-xl">
           <img
             src={reward.image}
@@ -146,12 +103,17 @@ function RewardCard({ reward }: { reward: any }) {
           <div className="flex flex-col gap-2">
             <h3 className="text-xl font-bold text-white">{reward.title}</h3>
             <div className="flex gap-2">
+              {showStatusBadges && reward.featured && (
+                <Badge className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                  Featured
+                </Badge>
+              )}
               {reward.isNew && (
                 <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                   New
                 </Badge>
               )}
-              {reward.isAd && (
+              {showStatusBadges && reward.isAd && (
                 <Badge className="bg-blue-500/10 text-blue-500 border border-blue-500/20">
                   Ad
                 </Badge>
@@ -161,12 +123,12 @@ function RewardCard({ reward }: { reward: any }) {
         </div>
         <p className="text-slate-300 mb-4 line-clamp-2">{reward.description}</p>
         <div className="text-2xl font-bold text-[rgb(var(--primary))] mb-4">
-          ${typeof reward.value ? reward.value : '0'}
+          ${reward.value}
         </div>
         <div className="flex items-center gap-2 text-slate-400">
           <Clock className="w-4 h-4" />
           <span>
-            Expires: {new Date(reward.expires_at).toLocaleDateString()}
+            Expires: {new Date(reward.expiresAt).toLocaleDateString()}
           </span>
         </div>
       </div>
@@ -175,7 +137,10 @@ function RewardCard({ reward }: { reward: any }) {
 }
 
 export default function Index() {
-  const { rewards, featuredRewards } = useLoaderData<typeof loader>();
+  const { rewards, featuredRewards } = useLoaderData<{
+    rewards: any[];
+    featuredRewards: any[];
+  }>();
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -194,7 +159,7 @@ export default function Index() {
               <h1 className="text-4xl md:text-7xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500/80">
                 Discover Exclusive <br /> Rewards & Campaigns
               </h1>
-              <p className="mt-4 font-normal text-base text-slate-400 max-w-lg text-center mx-auto">
+              <p className="mt-4 font-normal text-base text-slate-400 max-w-lg text-center mx-auto ">
                 Stay ahead of the curve with KaitoRewards. Get early access to
                 upcoming campaigns, exclusive memberships, and unique
                 opportunities.
@@ -218,18 +183,28 @@ export default function Index() {
 
           <div className="mb-12" id="featured">
             <h2 className="text-2xl font-bold mb-6 text-white">
-              Featured Rewards
+              Featured Campaigns
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredRewards?.map((reward) => (
-                <RewardCard key={reward.id} reward={reward} />
-              ))}
+              {featuredRewards.length === 0 ? (
+                <p className="text-slate-400 col-span-full text-center">
+                  No featured campaigns available yet.
+                </p>
+              ) : (
+                featuredRewards.map((reward) => (
+                  <RewardCard
+                    key={reward.id}
+                    reward={reward}
+                    showStatusBadges={true}
+                  />
+                ))
+              )}
             </div>
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white">All Rewards</h2>
+              <h2 className="text-2xl font-bold text-white">All Campaigns</h2>
               <div className="flex gap-4">
                 <button className="text-slate-400 hover:text-white transition-colors">
                   Latest
@@ -240,9 +215,19 @@ export default function Index() {
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {rewards?.map((reward) => (
-                <RewardCard key={reward.id} reward={reward} />
-              ))}
+              {rewards.length === 0 ? (
+                <p className="text-slate-400 col-span-full text-center">
+                  No campaigns available yet.
+                </p>
+              ) : (
+                rewards.map((reward) => (
+                  <RewardCard
+                    key={reward.id}
+                    reward={reward}
+                    showStatusBadges={false}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>

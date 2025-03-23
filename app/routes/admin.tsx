@@ -454,7 +454,14 @@ export default function Admin() {
                   key={campaign.id}
                   className="bg-slate-900/50 backdrop-blur-sm p-4 rounded-lg border border-slate-800 hover:scale-[1.02] transition-all"
                 >
-                  <div className="flex justify-between items-start">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-700 flex-shrink-0">
+                      <img
+                        src={campaign.image}
+                        alt={campaign.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-3">
                         <h4 className="text-xl font-bold text-white">
