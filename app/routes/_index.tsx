@@ -1,9 +1,17 @@
 import { Clock } from 'lucide-react';
-import { Link, useLoaderData } from '@remix-run/react';
+import {
+  Link,
+  useLoaderData,
+  Form,
+  useSubmit,
+  useNavigation,
+  useLocation,
+} from '@remix-run/react';
 import { LoaderFunctionArgs } from '@remix-run/node';
 import { Lamp } from '~/components/ui/lamp';
 import { Logo } from '~/components/ui/logo';
 import prisma from '~/lib/prisma.server';
+import { useEffect, useState, useRef } from 'react';
 
 export const meta = () => {
   return [
@@ -16,8 +24,13 @@ export const meta = () => {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get('search')?.toLowerCase() || '';
+  const sortBy = url.searchParams.get('sortBy') || 'latest'; // Default to 'latest'
+  const sortOrder = url.searchParams.get('sortOrder') || 'desc'; // Default to 'desc'
+
   const campaigns = await prisma.campaign.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: 'desc' }, // Initial fetch order
   });
 
   // Fetch up to 2 featured campaigns (non-ads)
@@ -30,15 +43,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Combine into a list of 4, with ads in 3rd and 4th positions
   const sortedFeatured = [];
-  // Add featured campaigns (up to 2)
   sortedFeatured.push(...featuredCampaigns);
 
-  // Add ad campaigns (up to 2)
-  const adSpots = 2; // We want 2 ad spots
+  const adSpots = 2;
   const adCount = adCampaigns.length;
   sortedFeatured.push(...adCampaigns);
 
-  // If fewer than 2 ad campaigns, fill with placeholders
   const placeholdersNeeded = adSpots - adCount;
   for (let i = 0; i < placeholdersNeeded; i++) {
     sortedFeatured.push({
@@ -47,15 +57,40 @@ export async function loader({ request }: LoaderFunctionArgs) {
       title: 'Advertise with Us!',
       description:
         'Reach thousands of engaged users by showcasing your campaign here.',
-      value: 'Contact us for details',
+      value: 'Contact Us',
       totalAmount: 0,
-      expiresAt: new Date('2025-12-31').toISOString(),
+      email: 'IncentiveIQ@protonmail.com',
       image: 'https://via.placeholder.com/150?text=Advertise',
     });
   }
 
-  const featuredRewards = sortedFeatured.slice(0, 4); // Ensure exactly 4 items
-  const rewards = campaigns.filter((c) => !c.isAd);
+  const featuredRewards = sortedFeatured.slice(0, 4);
+  let rewards = campaigns.filter((c) => !c.isAd);
+
+  // Filter rewards based on search term
+  if (searchTerm) {
+    rewards = rewards.filter(
+      (c) =>
+        c.title.toLowerCase().includes(searchTerm) ||
+        c.description.toLowerCase().includes(searchTerm)
+    );
+  }
+
+  // Sort rewards based on sortBy and sortOrder
+  if (sortBy === 'latest') {
+    rewards.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+  } else if (sortBy === 'value') {
+    rewards.sort((a, b) => {
+      // Parse value (e.g., "$500 per week" -> 500)
+      const valueA = parseFloat(a.value.replace(/[^0-9.]/g, '')) || 0;
+      const valueB = parseFloat(b.value.replace(/[^0-9.]/g, '')) || 0;
+      return sortOrder === 'desc' ? valueB - valueA : valueA - valueB;
+    });
+  }
 
   return new Response(JSON.stringify({ rewards, featuredRewards }), {
     headers: { 'Content-Type': 'application/json' },
@@ -85,9 +120,8 @@ function RewardCard({
   reward: any;
   showStatusBadges?: boolean;
 }) {
-  // Apply blue border for ads and placeholders, yellow for featured, default otherwise
   const borderClass = reward.isPlaceholder
-    ? 'border-2 border-blue-500 bg-gradient-to-r from-blue-500/20 to-transparent hover:from-blue-500/30 hover:to-blue-500/10'
+    ? 'border-2 border-blue-500 bg-gradient-to-r from-blue-500/20 to-transparent'
     : showStatusBadges
     ? reward.isAd
       ? 'border-2 border-blue-500 bg-gradient-to-r from-blue-500/20 to-transparent hover:from-blue-500/30 hover:to-blue-500/10'
@@ -96,17 +130,21 @@ function RewardCard({
       : 'border border-slate-800'
     : 'border border-slate-800';
 
+  const Container = reward.isPlaceholder ? 'div' : Link;
+
   return (
-    <Link
+    <Container
       to={
         reward.isPlaceholder
-          ? '/contact'
+          ? undefined
           : `/campaigns/${slugify(reward.title)}-${reward.id}`
       }
       className="block h-full"
     >
       <div
-        className={`card hover:scale-[1.02] transition-all h-full bg-slate-900/50 backdrop-blur-sm ${borderClass}`}
+        className={`card ${
+          reward.isPlaceholder ? '' : 'hover:scale-[1.02]'
+        } transition-all h-full bg-slate-900/50 backdrop-blur-sm ${borderClass}`}
       >
         <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full overflow-hidden border-4 border-slate-900 shadow-xl">
           <img
@@ -138,22 +176,30 @@ function RewardCard({
           </div>
         </div>
         <p className="text-slate-300 mb-4 line-clamp-2">{reward.description}</p>
-        <div className="flex items-baseline gap-2 mb-4">
+        <div className="mb-4">
           <div className="text-2xl font-bold text-[rgb(var(--primary))]">
             {reward.value}
           </div>
-          <div className="text-sm text-emerald-300">
-            (Est. ${reward.totalAmount.toLocaleString()})
-          </div>
+          {!reward.isPlaceholder && (
+            <div className="text-sm text-emerald-300">
+              (Est. ${reward.totalAmount.toLocaleString()})
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 text-slate-400">
-          <Clock className="w-4 h-4" />
-          <span>
-            Expires: {new Date(reward.expiresAt).toLocaleDateString()}
-          </span>
+          {reward.isPlaceholder ? (
+            <span>Email: {reward.email}</span>
+          ) : (
+            <>
+              <Clock className="w-4 h-4" />
+              <span>
+                Expires: {new Date(reward.expiresAt).toLocaleDateString()}
+              </span>
+            </>
+          )}
         </div>
       </div>
-    </Link>
+    </Container>
   );
 }
 
@@ -169,6 +215,87 @@ export default function Index() {
     rewards: any[];
     featuredRewards: any[];
   }>();
+  const submit = useSubmit();
+  const navigation = useNavigation();
+  const location = useLocation();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('latest');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const scrollPositionRef = useRef(0);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Update search term and sort state from URL on initial load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const search = params.get('search') || '';
+    const sortByParam = params.get('sortBy') || 'latest';
+    const sortOrderParam = params.get('sortOrder') || 'desc';
+    setSearchTerm(search);
+    setSortBy(sortByParam);
+    setSortOrder(sortOrderParam);
+  }, []);
+
+  // Save scroll position before navigation
+  useEffect(() => {
+    if (navigation.state === 'submitting') {
+      scrollPositionRef.current = window.scrollY;
+    }
+  }, [navigation.state]);
+
+  // Restore scroll position after navigation
+  useEffect(() => {
+    if (navigation.state === 'idle') {
+      window.scrollTo(0, scrollPositionRef.current);
+    }
+  }, [navigation.state, location]);
+
+  // Handle search input change with debouncing
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      const formData = new FormData();
+      formData.set('search', value);
+      formData.set('sortBy', sortBy);
+      formData.set('sortOrder', sortOrder);
+      submit(formData, { method: 'get', replace: true });
+    }, 300);
+  };
+
+  // Handle sort button clicks
+  const handleSortChange = (newSortBy: string) => {
+    let newSortOrder = sortOrder;
+    if (sortBy === newSortBy) {
+      // Toggle sort order if clicking the same button
+      newSortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+    } else {
+      // Default to descending for new sort type
+      newSortOrder = 'desc';
+    }
+
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+
+    const formData = new FormData();
+    formData.set('search', searchTerm);
+    formData.set('sortBy', newSortBy);
+    formData.set('sortOrder', newSortOrder);
+    submit(formData, { method: 'get', replace: true });
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -231,19 +358,37 @@ export default function Index() {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-white">All Campaigns</h2>
-              <div className="flex gap-4">
-                <button className="text-slate-400 hover:text-white transition-colors">
+              <div className="flex gap-4 items-center">
+                <Form method="get" className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    name="search"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    placeholder="Search campaigns..."
+                    className="p-2 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                  />
+                </Form>
+                <button
+                  onClick={() => handleSortChange('latest')}
+                  className="text-[rgb(var(--primary))] hover:text-[rgb(var(--primary))] transition-colors"
+                >
                   Latest
                 </button>
-                <button className="text-slate-400 hover:text-white transition-colors">
-                  Value ↑
+                <button
+                  onClick={() => handleSortChange('value')}
+                  className="text-[rgb(var(--primary))] hover:text-[rgb(var(--primary))] transition-colors flex items-center gap-1"
+                >
+                  Value {sortBy === 'value' && sortOrder === 'asc' ? '↑' : '↓'}
                 </button>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {rewards.length === 0 ? (
                 <p className="text-slate-400 col-span-full text-center">
-                  No campaigns available yet.
+                  {searchTerm
+                    ? 'No campaigns match your search.'
+                    : 'No campaigns available yet.'}
                 </p>
               ) : (
                 rewards.map((reward) => (
