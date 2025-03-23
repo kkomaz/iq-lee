@@ -7,23 +7,21 @@ import {
   useLoaderData,
   useNavigation,
 } from '@remix-run/react';
-import {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  redirect,
-} from '@remix-run/node';
+import { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import prisma from '~/lib/prisma.server';
-import { useState, useEffect } from 'react';
-
-// Define your allowed user (replace with your actual Privy user ID or email)
-const ALLOWED_USER_ID = 'did...'; // Replace with your Privy user ID
-// Alternatively, use your email if you prefer to check by email
-// const ALLOWED_EMAIL = 'your-email@example.com';
+import { useState } from 'react';
 
 export const meta = () => {
   return [
     { title: 'Admin - IncentiveIQ Campaign Platform' },
     { name: 'description', content: 'Create and manage your reward campaigns' },
+    // Add favicon link
+    {
+      tagName: 'link',
+      rel: 'icon',
+      type: 'image/svg+xml',
+      href: '/favicon.svg',
+    },
   ];
 };
 
@@ -70,17 +68,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
     }
 
-    // Verify the user ID matches the allowed user
-    if (userId !== ALLOWED_USER_ID) {
-      return new Response(
-        JSON.stringify({ error: 'Access denied: Unauthorized user' }),
-        {
-          status: 403,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
     await prisma.user.upsert({
       where: { id: userId },
       update: {},
@@ -121,23 +108,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const featured = formData.get('featured') === 'on';
     const isAd = formData.get('isAd') === 'on';
     const isNew = formData.get('isNew') === 'on';
-    const userId = formData.get('userId') as string;
 
     if (!id || !title) {
       return new Response(
         JSON.stringify({ error: 'ID and title are required' }),
         {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    if (userId !== ALLOWED_USER_ID) {
-      return new Response(
-        JSON.stringify({ error: 'Access denied: Unauthorized user' }),
-        {
-          status: 403,
           headers: { 'Content-Type': 'application/json' },
         }
       );
@@ -166,23 +142,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (intent === 'delete') {
     const id = parseInt(formData.get('id') as string);
-    const userId = formData.get('userId') as string;
-
     if (!id) {
       return new Response(
         JSON.stringify({ error: 'Campaign ID is required' }),
         {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    if (userId !== ALLOWED_USER_ID) {
-      return new Response(
-        JSON.stringify({ error: 'Access denied: Unauthorized user' }),
-        {
-          status: 403,
           headers: { 'Content-Type': 'application/json' },
         }
       );
@@ -204,6 +168,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 };
 
+// Badge component for displaying statuses
 function Badge({
   children,
   className = '',
@@ -227,20 +192,8 @@ export default function Admin() {
   const navigation = useNavigation();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
-  const [accessDenied, setAccessDenied] = useState(false);
 
-  // Check if the logged-in user is the allowed user
-  useEffect(() => {
-    if (authenticated && user) {
-      if (user.id !== ALLOWED_USER_ID) {
-        // Alternatively, if checking by email: user.email?.address !== ALLOWED_EMAIL
-        setAccessDenied(true);
-        logout(); // Log out unauthorized users
-      }
-    }
-  }, [authenticated, user, logout]);
-
-  if (!authenticated || accessDenied) {
+  if (!authenticated) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="bg-slate-900/50 backdrop-blur-sm p-8 rounded-lg shadow-xl border border-slate-800 max-w-md w-full text-center">
@@ -248,18 +201,14 @@ export default function Admin() {
             Access Denied
           </h1>
           <p className="text-slate-300 mb-6">
-            {accessDenied
-              ? 'You are not authorized to access this page.'
-              : 'You need to log in to access the admin dashboard.'}
+            You need to log in to access the admin dashboard.
           </p>
-          {!accessDenied && (
-            <button
-              onClick={login}
-              className="bg-[rgb(var(--primary))] text-slate-950 px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-all"
-            >
-              Log In
-            </button>
-          )}
+          <button
+            onClick={login}
+            className="bg-[rgb(var(--primary))] text-slate-950 px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-all"
+          >
+            Log In
+          </button>
           <p className="mt-4 text-slate-400">
             <Link to="/" className="text-blue-400 hover:underline">
               Back to Home
@@ -305,7 +254,7 @@ export default function Admin() {
             <button
               onClick={() => {
                 setIsFormOpen(!isFormOpen);
-                setEditingCampaign(null);
+                setEditingCampaign(null); // Reset edit state when toggling
               }}
               className="bg-[rgb(var(--primary))] text-slate-950 px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-all flex items-center gap-2"
             >
@@ -318,6 +267,7 @@ export default function Admin() {
             </button>
           </div>
 
+          {/* Toggleable Form */}
           {isFormOpen && (
             <div className="bg-slate-900/50 backdrop-blur-sm p-6 rounded-lg border border-slate-800 shadow-xl mb-8">
               <h3 className="text-2xl font-bold text-white mb-6">
@@ -496,6 +446,7 @@ export default function Admin() {
             </div>
           )}
 
+          {/* Campaign List */}
           <div className="space-y-6">
             <h3 className="text-2xl font-bold text-white mb-4">
               Current Campaigns
@@ -565,7 +516,6 @@ export default function Admin() {
                       <Form method="post" className="inline">
                         <input type="hidden" name="id" value={campaign.id} />
                         <input type="hidden" name="intent" value="delete" />
-                        <input type="hidden" name="userId" value={user?.id} />
                         <button
                           type="submit"
                           className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition-all"
