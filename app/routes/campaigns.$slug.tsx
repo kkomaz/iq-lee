@@ -1,6 +1,13 @@
 import { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import { Link, useLoaderData } from '@remix-run/react';
-import { ArrowLeft, Clock, Link as LinkIcon, Globe, Gift } from 'lucide-react';
+import {
+  ArrowLeft,
+  Clock,
+  Link as LinkIcon,
+  Globe,
+  Gift,
+  AppWindow,
+} from 'lucide-react';
 import prisma from '~/lib/prisma.server';
 import { SocialIcons } from '~/components/SocialIcons';
 import XIcon from '~/components/XIcon';
@@ -285,7 +292,11 @@ export default function CampaignDetail() {
                   <p className="text-slate-300">
                     Total Estimated Amount:{' '}
                     <span className="text-[rgb(var(--primary))]">
-                      ${campaign.totalAmount.toLocaleString()}
+                      {campaign.totalAmount === 0 ? (
+                        <span>TBD</span>
+                      ) : (
+                        <span>${campaign.totalAmount.toLocaleString()}</span>
+                      )}
                     </span>
                   </p>
                 </div>
@@ -315,8 +326,8 @@ export default function CampaignDetail() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all transform hover:scale-105 hover:bg-slate-800/50 rounded-lg p-2"
                   >
-                    <Gift className="w-5 h-5" />
-                    <span>App Link</span>
+                    <AppWindow className="w-5 h-5" />
+                    <span>App</span>
                   </a>
                 )}
                 {campaign.xUrl && (
