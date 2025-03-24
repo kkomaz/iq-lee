@@ -316,7 +316,7 @@ export default function CampaignDetail() {
                     className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all transform hover:scale-105 hover:bg-slate-800/50 rounded-lg p-2"
                   >
                     <Gift className="w-5 h-5" />
-                    <span>Airdrop</span>
+                    <span>App Link</span>
                   </a>
                 )}
                 {campaign.xUrl && (
