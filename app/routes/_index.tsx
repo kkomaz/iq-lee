@@ -10,7 +10,7 @@ import {
 import { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import { Lamp } from '~/components/ui/lamp';
 import { Logo } from '~/components/ui/logo';
-import { SocialIcons } from '~/components/SocialIcons'; // Import the new component
+import { SocialIcons } from '~/components/SocialIcons';
 import prisma from '~/lib/prisma.server';
 import { useEffect, useState, useRef } from 'react';
 
@@ -131,7 +131,7 @@ function Badge({
 }) {
   return (
     <span
-      className={`px-2 py-1 text-xs font-semibold rounded-full ${className}`}
+      className={`px-2 py-1 text-xs sm:text-xs font-semibold rounded-full ${className}`}
     >
       {children}
     </span>
@@ -180,7 +180,9 @@ function RewardCard({
         </div>
         <div className="flex justify-between items-start mb-3">
           <div className="flex flex-col gap-2">
-            <h3 className="text-xl font-bold text-white">{reward.title}</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-white">
+              {reward.title}
+            </h3>
             <div className="flex gap-2">
               {showStatusBadges && !reward.isPlaceholder && reward.featured && (
                 <Badge className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
@@ -200,13 +202,15 @@ function RewardCard({
             </div>
           </div>
         </div>
-        <p className="text-slate-300 mb-4 line-clamp-2">{reward.description}</p>
+        <p className="text-slate-300 mb-4 line-clamp-2 text-sm sm:text-base">
+          {reward.description}
+        </p>
         <div className="mb-4">
-          <div className="text-2xl font-bold text-[rgb(var(--primary))] mb-0.5">
+          <div className="text-lg sm:text-xl font-bold text-[rgb(var(--primary))] mb-0.5">
             {reward.value}
           </div>
           {!reward.isPlaceholder && (
-            <div className="text-sm text-emerald-300">
+            <div className="text-xs sm:text-sm text-emerald-300">
               {reward.totalAmount === 0 ? (
                 <span>(Est. TBD)</span>
               ) : (
@@ -215,7 +219,7 @@ function RewardCard({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 text-slate-400">
+        <div className="flex items-center gap-2 text-slate-400 text-xs sm:text-sm">
           {reward.isPlaceholder ? (
             <span>Email: {reward.email}</span>
           ) : (
@@ -225,8 +229,8 @@ function RewardCard({
                 Expires:{' '}
                 {reward.expiresAt
                   ? new Date(reward.expiresAt).toLocaleDateString('en-US', {
-                      month: 'long', // Full month name (e.g., "August")
-                      year: 'numeric', // Full year (e.g., "2025")
+                      month: 'long',
+                      year: 'numeric',
                     })
                   : 'TBD'}
               </span>
@@ -327,22 +331,22 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-slate-950">
       <header className="absolute top-0 left-0 right-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="h-24 flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="h-16 sm:h-24 flex items-center justify-between">
             <Logo />
-            <SocialIcons /> {/* Add SocialIcons to the top right */}
+            <SocialIcons />
           </div>
         </div>
       </header>
 
       <Lamp>
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-16">
-            <div className="p-4 max-w-7xl mx-auto w-full pt-32 md:pt-24">
-              <h1 className="text-4xl md:text-7xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500/80">
+        <div className="container mx-auto px-4 sm:px-6 py-8">
+          <div className="mb-12 sm:mb-16">
+            <div className="p-4 max-w-7xl mx-auto w-full pt-24 sm:pt-32 md:pt-24">
+              <h1 className="text-3xl sm:text-4xl md:text-7xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500/80">
                 Discover Exclusive <br /> Rewards & Campaigns
               </h1>
-              <p className="mt-4 font-normal text-base text-slate-400 max-w-lg text-center mx-auto">
+              <p className="mt-4 font-normal text-sm sm:text-base text-slate-400 max-w-lg text-center mx-auto">
                 Stay ahead of the game with{' '}
                 <span className="text-[rgb(var(--primary))] ">
                   IncentiveIQ!
@@ -351,7 +355,7 @@ export default function Index() {
                 leaderboard, and unlock exclusive perks, early access, and
                 unique opportunities.
               </p>
-              {/* <div className="mt-8 flex justify-center gap-4">
+              {/* <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center gap-4">
                 <Link
                   to="/signup"
                   className="px-6 py-3 bg-[rgb(var(--primary))] text-slate-950 rounded-lg font-medium hover:opacity-90 transition-all"
@@ -368,11 +372,13 @@ export default function Index() {
             </div>
           </div>
 
-          <div className="mb-12" id="featured">
-            <h2 className="text-2xl font-bold mb-6 text-white">Our Picks</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="mb-8 sm:mb-12" id="featured">
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-white">
+              Our Picks
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {featuredRewards.length === 0 ? (
-                <p className="text-slate-400 col-span-full text-center">
+                <p className="text-slate-400 col-span-full text-center text-sm sm:text-base">
                   No featured campaigns available yet.
                 </p>
               ) : (
@@ -388,36 +394,44 @@ export default function Index() {
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white">All Campaigns</h2>
-              <div className="flex gap-4 items-center">
-                <Form method="get" className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                All Campaigns
+              </h2>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center w-full sm:w-auto">
+                <Form
+                  method="get"
+                  className="flex items-center gap-2 w-full sm:w-auto"
+                >
                   <input
                     type="text"
                     name="search"
                     value={searchTerm}
                     onChange={handleSearchChange}
                     placeholder="Search campaigns..."
-                    className="p-2 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                    className="p-2 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500 w-full sm:w-auto text-sm sm:text-base"
                   />
                 </Form>
-                <button
-                  onClick={() => handleSortChange('latest')}
-                  className="text-[rgb(var(--primary))] hover:text-[rgb(var(--primary))] transition-colors"
-                >
-                  Latest
-                </button>
-                <button
-                  onClick={() => handleSortChange('value')}
-                  className="text-[rgb(var(--primary))] hover:text-[rgb(var(--primary))] transition-colors flex items-center gap-1"
-                >
-                  Value {sortBy === 'value' && sortOrder === 'asc' ? '↑' : '↓'}
-                </button>
+                <div className="flex gap-2 sm:gap-4">
+                  <button
+                    onClick={() => handleSortChange('latest')}
+                    className="text-[rgb(var(--primary))] hover:text-[rgb(var(--primary))] transition-colors text-sm sm:text-base"
+                  >
+                    Latest
+                  </button>
+                  <button
+                    onClick={() => handleSortChange('value')}
+                    className="text-[rgb(var(--primary))] hover:text-[rgb(var(--primary))] transition-colors flex items-center gap-1 text-sm sm:text-base"
+                  >
+                    Value{' '}
+                    {sortBy === 'value' && sortOrder === 'asc' ? '↑' : '↓'}
+                  </button>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {rewards.length === 0 ? (
-                <p className="text-slate-400 col-span-full text-center">
+                <p className="text-slate-400 col-span-full text-center text-sm sm:text-base">
                   {searchTerm
                     ? 'No campaigns match your search.'
                     : 'No campaigns available yet.'}

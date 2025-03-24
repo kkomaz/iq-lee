@@ -153,7 +153,7 @@ function CampaignCard({ campaign }: { campaign: any }) {
           {campaign.description}
         </p>
         <div className="flex items-baseline gap-2 mb-4">
-          <div className="text-2xl font-bold text-[rgb(var(--primary))]">
+          <div className="text-xl font-bold text-[rgb(var(--primary))]">
             {campaign.value}
           </div>
           <div className="text-sm text-emerald-300">
@@ -184,22 +184,11 @@ export default function CampaignDetail() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
-      <div className="mx-auto max-w-6xl px-6 py-8 flex-1">
-        <div className="flex items-center justify-between mb-8">
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Campaigns</span>
-          </Link>
-          <SocialIcons />
-        </div>
-
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-6">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 flex-1">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8">
+          <div className="flex items-center gap-4 sm:gap-6 mb-4 sm:mb-0">
             <div
-              className={`w-16 h-16 rounded-full overflow-hidden border-2 ${borderColor} flex-shrink-0`}
+              className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 ${borderColor} flex-shrink-0`}
             >
               <img
                 src={campaign.image}
@@ -208,7 +197,7 @@ export default function CampaignDetail() {
               />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white">
+              <h1 className="text-3xl sm:text-4xl font-bold text-white">
                 {campaign.title}
               </h1>
               <div className="flex gap-2 mt-2">
@@ -230,22 +219,22 @@ export default function CampaignDetail() {
               </div>
             </div>
           </div>
-          <div className="bg-slate-800/50 backdrop-blur-sm px-6 py-4 rounded-lg border border-[rgb(var(--primary))] border-opacity-30 shadow-lg">
-            <div className="text-2xl font-semibold text-[rgb(var(--primary))] font-sans">
+          <div className="w-full sm:w-[416px] bg-slate-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-lg border border-[rgb(var(--primary))] border-opacity-30 shadow-lg hidden md:block">
+            <div className="text-lg sm:text-xl font-semibold text-[rgb(var(--primary))] font-sans text-wrap">
               {campaign.value}
             </div>
-            <div className="text-sm text-slate-200 font-sans mt-1">
+            <div className="text-xs sm:text-sm text-slate-200 font-sans mt-1">
               Total: ${campaign.totalAmount.toLocaleString()}
             </div>
             {/* Expiration Date */}
-            <div className="flex items-center gap-2 text-slate-400 mt-2 justify-start text-sm">
+            <div className="flex items-center gap-2 text-slate-400 mt-2 justify-start text-xs sm:text-sm">
               <Clock className="w-4 h-4" />
               <span>
                 Expires:{' '}
                 {campaign.expiresAt
                   ? new Date(campaign.expiresAt).toLocaleDateString('en-US', {
-                      month: 'long', // Full month name (e.g., "August")
-                      year: 'numeric', // Full year (e.g., "2025")
+                      month: 'long',
+                      year: 'numeric',
                     })
                   : 'TBD'}
               </span>
@@ -253,59 +242,89 @@ export default function CampaignDetail() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="space-y-8">
-              <section>
-                <h2 className="text-2xl font-semibold mb-4 text-white">
-                  About
-                </h2>
-                <div className="prose prose-invert max-w-none">
-                  <pre className="whitespace-pre-wrap font-sans text-slate-300">
-                    {campaign.description}
-                  </pre>
-                </div>
-              </section>
+        <div className="flex items-center justify-center lg:justify-between mb-4 sm:mb-8">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Campaigns</span>
+          </Link>
+          {/* <SocialIcons /> */}
+        </div>
 
-              <section>
-                <h2 className="text-2xl font-semibold mb-4 text-white">
-                  Campaign Information
-                </h2>
-                <div className="prose prose-invert max-w-none">
-                  <pre className="whitespace-pre-wrap font-sans text-slate-300">
-                    {campaign.longDescription}
-                  </pre>
-                </div>
-              </section>
+        <div className="grid grid-cols-1 gap-6 sm:gap-8">
+          <div className="space-y-6 sm:space-y-8">
+            <section>
+              <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-white">
+                About
+              </h2>
+              <div className="prose prose-invert max-w-none">
+                <pre className="whitespace-pre-wrap font-sans text-slate-300 text-sm sm:text-base">
+                  {campaign.description}
+                </pre>
+              </div>
+            </section>
 
-              <section>
-                <h2 className="text-2xl font-semibold mb-4 text-white">
-                  Reward Details
-                </h2>
-                <div className="prose prose-invert max-w-none">
-                  <p className="text-slate-300 mb-2">
-                    Reward Details:{' '}
-                    <span className="text-[rgb(var(--primary))]">
-                      {campaign.value}
-                    </span>
-                  </p>
-                  <p className="text-slate-300">
-                    Total Estimated Amount:{' '}
-                    <span className="text-[rgb(var(--primary))]">
-                      {campaign.totalAmount === 0 ? (
-                        <span>TBD</span>
-                      ) : (
-                        <span>${campaign.totalAmount.toLocaleString()}</span>
-                      )}
-                    </span>
-                  </p>
-                </div>
-              </section>
-            </div>
+            <section>
+              <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-white">
+                Campaign Information
+              </h2>
+              <div className="prose prose-invert max-w-none">
+                <pre className="whitespace-pre-wrap font-sans text-slate-300 text-sm sm:text-base">
+                  {campaign.longDescription}
+                </pre>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-white">
+                Reward Details
+              </h2>
+              <div className="prose prose-invert max-w-none">
+                <p className="text-slate-300 mb-2 text-sm sm:text-base">
+                  Reward Details:{' '}
+                  <span className="text-[rgb(var(--primary))]">
+                    {campaign.value}
+                  </span>
+                </p>
+                <p className="text-slate-300 text-sm sm:text-base">
+                  Total Estimated Amount:{' '}
+                  <span className="text-[rgb(var(--primary))]">
+                    {campaign.totalAmount === 0 ? (
+                      <span>TBD</span>
+                    ) : (
+                      <span>${campaign.totalAmount.toLocaleString()}</span>
+                    )}
+                  </span>
+                </p>
+              </div>
+            </section>
           </div>
 
           <div className="lg:col-span-1">
-            <div className="bg-slate-900/70 rounded-xl p-6 sticky top-8 border border-[rgb(var(--primary))] border-opacity-30 shadow-inner">
+            <div className="w-full sm:w-[416px] bg-slate-800/50 backdrop-blur-sm p-4 sm:p-6 rounded-lg border border-[rgb(var(--primary))] border-opacity-30 shadow-lg block md:hidden mb-4">
+              <div className="text-lg sm:text-xl font-semibold text-[rgb(var(--primary))] font-sans text-wrap">
+                {campaign.value}
+              </div>
+              <div className="text-xs sm:text-sm text-slate-200 font-sans mt-1">
+                Total: ${campaign.totalAmount.toLocaleString()}
+              </div>
+              {/* Expiration Date */}
+              <div className="flex items-center gap-2 text-slate-400 mt-2 justify-start text-xs sm:text-sm">
+                <Clock className="w-4 h-4" />
+                <span>
+                  Expires:{' '}
+                  {campaign.expiresAt
+                    ? new Date(campaign.expiresAt).toLocaleDateString('en-US', {
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    : 'TBD'}
+                </span>
+              </div>
+            </div>
+            <div className="bg-slate-900/70 rounded-xl p-4 sm:p-6 border border-[rgb(var(--primary))] border-opacity-30 shadow-inner">
               {/* Links Section */}
               <div className="space-y-3 mb-6">
                 {campaign.companyUrl && (
@@ -363,16 +382,16 @@ export default function CampaignDetail() {
         </div>
 
         {/* Divider */}
-        <div className="my-12">
+        <div className="my-8 sm:my-12">
           <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
         </div>
 
         {/* Explore More Campaigns Section */}
-        <div className="pt-8 pb-12">
-          <h2 className="text-2xl font-bold mb-6 text-white">
+        <div className="pt-6 sm:pt-8 pb-10 sm:pb-12">
+          <h2 className="text-xl sm:text-2xl font-bold mb-6 text-white">
             Explore More Campaigns
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {randomCampaigns.length === 0 ? (
               <p className="text-slate-400 col-span-full text-center">
                 No other campaigns available yet.
