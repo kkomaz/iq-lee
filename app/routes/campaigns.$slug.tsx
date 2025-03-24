@@ -224,7 +224,10 @@ export default function CampaignDetail() {
               {campaign.value}
             </div>
             <div className="text-xs sm:text-sm text-slate-200 font-sans mt-1">
-              Total: ${campaign.totalAmount.toLocaleString()}
+              Total:{' '}
+              {campaign.totalAmount === 0
+                ? 'TBD'
+                : `$${campaign.totalAmount.toLocaleString()}`}
             </div>
             {/* Expiration Date */}
             <div className="flex items-center gap-2 text-slate-400 mt-2 justify-start text-xs sm:text-sm">
@@ -308,7 +311,10 @@ export default function CampaignDetail() {
                 {campaign.value}
               </div>
               <div className="text-xs sm:text-sm text-slate-200 font-sans mt-1">
-                Total: ${campaign.totalAmount.toLocaleString()}
+                Total:{' '}
+                {campaign.totalAmount === 0
+                  ? 'TBD'
+                  : `$${campaign.totalAmount.toLocaleString()}`}
               </div>
               {/* Expiration Date */}
               <div className="flex items-center gap-2 text-slate-400 mt-2 justify-start text-xs sm:text-sm">

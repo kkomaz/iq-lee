@@ -208,7 +208,7 @@ function RewardCard({
           {reward.description}
         </p>
         <div className="mb-4">
-          <div className="text-xl sm:text-2xl font-bold text-[rgb(var(--primary))] mb-0.5">
+          <div className="text-lg sm:text-xl font-bold text-[rgb(var(--primary))] mb-0.5">
             {reward.value}
           </div>
           {!reward.isPlaceholder && (
