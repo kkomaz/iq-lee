@@ -1,8 +1,9 @@
 import { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import { Link, useLoaderData } from '@remix-run/react';
-import { ArrowLeft, Clock } from 'lucide-react';
+import { ArrowLeft, Clock, Link as LinkIcon, Globe, Gift } from 'lucide-react';
 import prisma from '~/lib/prisma.server';
-import { SocialIcons } from '~/components/SocialIcons'; // Import the new component
+import { SocialIcons } from '~/components/SocialIcons';
+import XIcon from '~/components/XIcon';
 
 // Base URL for your app (replace with your actual domain)
 const BASE_URL = 'https://incentiveiq.com';
@@ -185,7 +186,7 @@ export default function CampaignDetail() {
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Campaigns</span>
           </Link>
-          <SocialIcons /> {/* Add SocialIcons to the top right */}
+          <SocialIcons />
         </div>
 
         <div className="flex items-center justify-between mb-8">
@@ -229,6 +230,16 @@ export default function CampaignDetail() {
             <div className="text-sm text-slate-200 font-sans mt-1">
               Total: ${campaign.totalAmount.toLocaleString()}
             </div>
+            {/* Expiration Date */}
+            <div className="flex items-center gap-2 text-slate-400 mt-2 justify-start text-sm">
+              <Clock className="w-4 h-4" />
+              <span>
+                Expires:{' '}
+                {campaign.expiresAt
+                  ? new Date(campaign.expiresAt).toLocaleDateString()
+                  : 'No expiration'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -237,7 +248,18 @@ export default function CampaignDetail() {
             <div className="space-y-8">
               <section>
                 <h2 className="text-2xl font-semibold mb-4 text-white">
-                  About This Campaign
+                  About
+                </h2>
+                <div className="prose prose-invert max-w-none">
+                  <pre className="whitespace-pre-wrap font-sans text-slate-300">
+                    {campaign.description}
+                  </pre>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-semibold mb-4 text-white">
+                  Campaign Information
                 </h2>
                 <div className="prose prose-invert max-w-none">
                   <pre className="whitespace-pre-wrap font-sans text-slate-300">
@@ -252,11 +274,10 @@ export default function CampaignDetail() {
                 </h2>
                 <div className="prose prose-invert max-w-none">
                   <p className="text-slate-300">
-                    Total Amount: ${campaign.totalAmount.toLocaleString()}
-                  </p>
-                  <p className="text-slate-300">
-                    Distribution details coming soon. Stay tuned for updates on
-                    how rewards will be allocated!
+                    Total Estimated Amount:{' '}
+                    <span className="text-[rgb(var(--primary))]">
+                      ${campaign.totalAmount.toLocaleString()}
+                    </span>
                   </p>
                 </div>
               </section>
@@ -264,27 +285,70 @@ export default function CampaignDetail() {
           </div>
 
           <div className="lg:col-span-1">
-            <div className="bg-slate-900/50 rounded-xl p-6 sticky top-8">
-              <div className="flex items-center gap-2 text-slate-400 mb-6">
-                <Clock className="w-5 h-5" />
-                <span>
-                  Expires: {new Date(campaign.expiresAt).toLocaleDateString()}
-                </span>
+            <div className="bg-slate-900/70 rounded-xl p-6 sticky top-8 border border-[rgb(var(--primary))] border-opacity-30 shadow-inner">
+              {/* Links Section */}
+              <div className="space-y-3 mb-6">
+                {campaign.companyUrl && (
+                  <a
+                    href={campaign.companyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all transform hover:scale-105 hover:bg-slate-800/50 rounded-lg p-2"
+                  >
+                    <Globe className="w-5 h-5" />
+                    <span>Website</span>
+                  </a>
+                )}
+                {campaign.airdropUrl && (
+                  <a
+                    href={campaign.airdropUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all transform hover:scale-105 hover:bg-slate-800/50 rounded-lg p-2"
+                  >
+                    <Gift className="w-5 h-5" />
+                    <span>Airdrop</span>
+                  </a>
+                )}
+                {campaign.xUrl && (
+                  <a
+                    href={campaign.xUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all transform hover:scale-105 hover:bg-slate-800/50 rounded-lg p-2"
+                  >
+                    <XIcon url={campaign.xUrl} className="w-5 h-5" />
+                    <span>Follow on X</span>
+                  </a>
+                )}
               </div>
-
-              <Link
-                to={`/campaigns/${campaign.id}/leaderboard`}
-                className="block w-full bg-[rgb(var(--primary))] text-slate-950 rounded-lg px-6 py-3 font-medium hover:opacity-90 transition-all mb-4 text-center"
-              >
-                View Leaderboard
-              </Link>
+              {/* Link to campaign.kaitoUrl */}
+              {campaign.kaitoUrl ? (
+                <a
+                  href={campaign.kaitoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-[rgb(var(--primary))] text-slate-950 rounded-lg px-6 py-3 font-medium hover:opacity-90 transition-all text-center flex items-center justify-center gap-2"
+                >
+                  <img
+                    src="https://pbs.twimg.com/profile_images/1866818904800063488/Qm4DW488_400x400.jpg"
+                    alt="Leaderboard Icon"
+                    className="w-6 h-6 rounded-full"
+                  />
+                  <span>View Leaderboard</span>
+                </a>
+              ) : null}
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="bg-slate-900 pt-8 pb-12">
-        <div className="mx-auto max-w-6xl px-6">
+        {/* Divider */}
+        <div className="my-12">
+          <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
+        </div>
+
+        {/* Explore More Campaigns Section */}
+        <div className="pt-8 pb-12">
           <h2 className="text-2xl font-bold mb-6 text-white">
             Explore More Campaigns
           </h2>

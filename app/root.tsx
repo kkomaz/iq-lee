@@ -44,6 +44,23 @@ export default function App() {
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
+        {/* Footer */}
+        <footer className="bg-slate-950 border-t border-slate-800 py-6">
+          <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row justify-between items-center text-slate-400 text-sm">
+            <div className="mb-4 sm:mb-0">itskkoma © 2025</div>
+            <div className="flex items-center gap-1">
+              <span>Made with 💚 by</span>
+              <a
+                href="https://twitter.com/itskkoma"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                @itskkoma
+              </a>
+            </div>
+          </div>
+        </footer>
       </body>
     </html>
   );
