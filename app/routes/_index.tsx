@@ -224,7 +224,10 @@ function RewardCard({
               <span>
                 Expires:{' '}
                 {reward.expiresAt
-                  ? new Date(reward.expiresAt).toLocaleDateString()
+                  ? new Date(reward.expiresAt).toLocaleDateString('en-US', {
+                      month: 'long', // Full month name (e.g., "August")
+                      year: 'numeric', // Full year (e.g., "2025")
+                    })
                   : 'TBD'}
               </span>
             </>
