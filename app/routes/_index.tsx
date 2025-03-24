@@ -109,11 +109,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       const dateB = new Date(b.createdAt).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
-  } else if (sortBy === 'value') {
+  } else if (sortBy === 'title') {
     rewards.sort((a, b) => {
-      const valueA = parseFloat(a.value.replace(/[^0-9.]/g, '')) || 0;
-      const valueB = parseFloat(b.value.replace(/[^0-9.]/g, '')) || 0;
-      return sortOrder === 'desc' ? valueB - valueA : valueA - valueB;
+      const titleA = a.title.toLowerCase();
+      const titleB = b.title.toLowerCase();
+      return sortOrder === 'desc'
+        ? titleB.localeCompare(titleA)
+        : titleA.localeCompare(titleB);
     });
   }
 
@@ -206,7 +208,7 @@ function RewardCard({
           {reward.description}
         </p>
         <div className="mb-4">
-          <div className="text-lg sm:text-xl font-bold text-[rgb(var(--primary))] mb-0.5">
+          <div className="text-xl sm:text-2xl font-bold text-[rgb(var(--primary))] mb-0.5">
             {reward.value}
           </div>
           {!reward.isPlaceholder && (
@@ -420,11 +422,11 @@ export default function Index() {
                     Latest
                   </button>
                   <button
-                    onClick={() => handleSortChange('value')}
+                    onClick={() => handleSortChange('title')}
                     className="text-[rgb(var(--primary))] hover:text-[rgb(var(--primary))] transition-colors flex items-center gap-1 text-sm sm:text-base"
                   >
-                    Value{' '}
-                    {sortBy === 'value' && sortOrder === 'asc' ? '↑' : '↓'}
+                    Title{' '}
+                    {sortBy === 'title' && sortOrder === 'asc' ? '↑' : '↓'}
                   </button>
                 </div>
               </div>
