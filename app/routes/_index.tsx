@@ -202,12 +202,16 @@ function RewardCard({
         </div>
         <p className="text-slate-300 mb-4 line-clamp-2">{reward.description}</p>
         <div className="mb-4">
-          <div className="text-2xl font-bold text-[rgb(var(--primary))]">
+          <div className="text-2xl font-bold text-[rgb(var(--primary))] mb-0.5">
             {reward.value}
           </div>
           {!reward.isPlaceholder && (
             <div className="text-sm text-emerald-300">
-              (Est. ${reward.totalAmount.toLocaleString()})
+              {reward.totalAmount === 0 ? (
+                <span>(Est. TBD)</span>
+              ) : (
+                <span>(Est. ${reward.totalAmount.toLocaleString()})</span>
+              )}
             </div>
           )}
         </div>
@@ -221,7 +225,7 @@ function RewardCard({
                 Expires:{' '}
                 {reward.expiresAt
                   ? new Date(reward.expiresAt).toLocaleDateString()
-                  : 'N/A'}
+                  : 'TBD'}
               </span>
             </>
           )}

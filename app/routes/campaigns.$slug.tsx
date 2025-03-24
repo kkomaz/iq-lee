@@ -237,7 +237,7 @@ export default function CampaignDetail() {
                 Expires:{' '}
                 {campaign.expiresAt
                   ? new Date(campaign.expiresAt).toLocaleDateString()
-                  : 'No expiration'}
+                  : 'TBD'}
               </span>
             </div>
           </div>
@@ -273,6 +273,12 @@ export default function CampaignDetail() {
                   Reward Details
                 </h2>
                 <div className="prose prose-invert max-w-none">
+                  <p className="text-slate-300 mb-2">
+                    Reward Details:{' '}
+                    <span className="text-[rgb(var(--primary))]">
+                      {campaign.value}
+                    </span>
+                  </p>
                   <p className="text-slate-300">
                     Total Estimated Amount:{' '}
                     <span className="text-[rgb(var(--primary))]">
