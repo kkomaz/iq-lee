@@ -12,6 +12,44 @@ import {
 import { PrivyProvider } from '@privy-io/react-auth';
 import styles from './tailwind.css';
 
+const BASE_URL = 'https://incentiveiq.com';
+
+export function meta() {
+  const title = 'IncentiveIQ - Earn Rewards for Your Contributions';
+  const description =
+    'Discover exciting rewards and opportunities with IncentiveIQ';
+  const url = BASE_URL;
+  const image = `${BASE_URL}/og-image.jpg`;
+
+  return [
+    { title },
+    { name: 'description', content: description },
+    {
+      tagName: 'link',
+      rel: 'icon',
+      type: 'image/svg+xml',
+      href: '/favicon.svg',
+    },
+    {
+      tagName: 'link',
+      rel: 'icon',
+      type: 'image/png',
+      href: '/favicon.png',
+    },
+    // Open Graph tags for social media sharing
+    { property: 'og:title', content: title },
+    { property: 'og:description', content: description },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: url },
+    { property: 'og:image', content: image },
+    // Twitter Card tags
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: title },
+    { name: 'twitter:description', content: description },
+    { name: 'twitter:image', content: image },
+  ];
+}
+
 export const links = () => [{ rel: 'stylesheet', href: styles }];
 
 // Loader function to pass environment variables to the client
