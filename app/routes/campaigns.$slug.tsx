@@ -140,10 +140,7 @@ function CampaignCard({ campaign }: { campaign: any }) {
   }
 
   return (
-    <Link
-      to={`/campaigns/${slugify(campaign.title)}-${campaign.id}`}
-      className="block h-full"
-    >
+    <Link to={`/campaigns/${slugify(campaign.title)}`} className="block h-full">
       <div
         className={`card hover:scale-[1.02] transition-all h-full bg-slate-900/50 backdrop-blur-sm ${borderClass}`}
       >
