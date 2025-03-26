@@ -162,9 +162,7 @@ function RewardCard({
   return (
     <Container
       to={
-        reward.isPlaceholder
-          ? undefined
-          : `/campaigns/${slugify(reward.title)}-${reward.id}`
+        reward.isPlaceholder ? undefined : `/campaigns/${slugify(reward.title)}`
       }
       className="block h-full"
     >

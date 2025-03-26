@@ -74,31 +74,41 @@ export const meta: MetaFunction = ({ data }) => {
 };
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const slugParam = params.slug as string;
-  const idMatch = slugParam.match(/(\d+)$/);
-  if (!idMatch) {
-    throw new Response('Invalid campaign URL', { status: 400 });
+  try {
+    const slug = params.slug as string;
+
+    // Fetch all campaigns and find the one with a matching slugified title
+    const campaigns = await prisma.campaign.findMany();
+    const campaign = campaigns.find((c) => {
+      const slugifiedTitle = c.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      return slugifiedTitle === slug;
+    });
+
+    if (!campaign) {
+      throw new Response('Campaign not found', { status: 404 });
+    }
+
+    const randomCampaigns = await prisma.$queryRaw`
+      SELECT * FROM "Campaign"
+      WHERE id != ${campaign.id} AND "isAd" = false
+      ORDER BY RANDOM()
+      LIMIT 2
+    `;
+
+    return new Response(JSON.stringify({ campaign, randomCampaigns }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error in campaigns.$slug loader:', error);
+    throw error instanceof Error
+      ? error
+      : new Error(
+          String(error) || 'An unexpected error occurred in the loader'
+        );
   }
-  const campaignId = parseInt(idMatch[1]);
-
-  const campaign = await prisma.campaign.findUnique({
-    where: { id: campaignId },
-  });
-
-  if (!campaign) {
-    throw new Response('Campaign not found', { status: 404 });
-  }
-
-  const randomCampaigns = await prisma.$queryRaw`
-    SELECT * FROM "Campaign"
-    WHERE id != ${campaignId} AND "isAd" = false
-    ORDER BY RANDOM()
-    LIMIT 2
-  `;
-
-  return new Response(JSON.stringify({ campaign, randomCampaigns }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
 }
 
 function Badge({
@@ -414,16 +424,23 @@ export default function CampaignDetail() {
   );
 }
 
-export function ErrorBoundary({ error }: { error: Error }) {
+export function ErrorBoundary({ error }) {
+  // Log the error for debugging
+  console.error('ErrorBoundary caught in campaigns.$slug:', error);
+
+  // Safely access the error message, with a fallback
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : String(error) || 'An unexpected error occurred';
+
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
       <div className="bg-slate-900/50 backdrop-blur-sm p-8 rounded-lg shadow-xl border border-slate-800 max-w-md w-full text-center">
         <h1 className="text-4xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500/80">
           Oops!
         </h1>
-        <p className="text-slate-300 mb-6">
-          {error.message || 'Something went wrong'}
-        </p>
+        <p className="text-slate-300 mb-6">{errorMessage}</p>
         <Link
           to="/"
           className="bg-[rgb(var(--primary))] text-slate-950 px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-all"
