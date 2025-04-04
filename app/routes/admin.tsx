@@ -1,4 +1,4 @@
-import { Trophy, ChevronDown, ChevronUp, Trash2, Pencil } from 'lucide-react';
+import { Trophy, ChevronDown, Trash2, Pencil } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 import {
   Link,
@@ -9,8 +9,9 @@ import {
 } from '@remix-run/react';
 import { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import prisma from '~/lib/prisma.server';
-import { useState } from 'react';
-import { redirect } from '@remix-run/node';
+import { useState, useEffect } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
 
 export const meta = () => {
   return [
@@ -25,7 +26,6 @@ export const meta = () => {
   ];
 };
 
-// Loader to fetch campaigns and enforce single-user access
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const allowedUserId = process.env.ALLOWED_PRIVY_USER_ID;
   try {
@@ -46,7 +46,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 };
 
-// Action to handle create, update, and delete
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const intent = formData.get('intent') as string;
@@ -63,10 +62,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const isAd = formData.get('isAd') === 'on';
     const isNew = formData.get('isNew') === 'on';
     const userId = formData.get('userId') as string;
-    const kaitoUrl = formData.get('kaitoUrl') as string; // New field
-    const companyUrl = formData.get('companyUrl') as string; // New field
-    const airdropUrl = formData.get('airdropUrl') as string; // New field
-    const xUrl = formData.get('xUrl') as string; // New field
+    const kaitoUrl = formData.get('kaitoUrl') as string;
+    const companyUrl = formData.get('companyUrl') as string;
+    const airdropUrl = formData.get('airdropUrl') as string;
+    const xUrl = formData.get('xUrl') as string;
 
     if (!title) {
       return new Response(
@@ -103,10 +102,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         isAd,
         isNew,
         userId,
-        kaitoUrl: kaitoUrl || null, // New field
-        companyUrl: companyUrl || null, // New field
-        airdropUrl: airdropUrl || null, // New field
-        xUrl: xUrl || null, // New field
+        kaitoUrl: kaitoUrl || null,
+        companyUrl: companyUrl || null,
+        airdropUrl: airdropUrl || null,
+        xUrl: xUrl || null,
       },
     });
 
@@ -128,10 +127,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const featured = formData.get('featured') === 'on';
     const isAd = formData.get('isAd') === 'on';
     const isNew = formData.get('isNew') === 'on';
-    const kaitoUrl = formData.get('kaitoUrl') as string; // New field
-    const companyUrl = formData.get('companyUrl') as string; // New field
-    const airdropUrl = formData.get('airdropUrl') as string; // New field
-    const xUrl = formData.get('xUrl') as string; // New field
+    const kaitoUrl = formData.get('kaitoUrl') as string;
+    const companyUrl = formData.get('companyUrl') as string;
+    const airdropUrl = formData.get('airdropUrl') as string;
+    const xUrl = formData.get('xUrl') as string;
 
     if (!id || !title) {
       return new Response(
@@ -156,10 +155,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         featured,
         isAd,
         isNew,
-        kaitoUrl: kaitoUrl || null, // New field
-        companyUrl: companyUrl || null, // New field
-        airdropUrl: airdropUrl || null, // New field
-        xUrl: xUrl || null, // New field
+        kaitoUrl: kaitoUrl || null,
+        companyUrl: companyUrl || null,
+        airdropUrl: airdropUrl || null,
+        xUrl: xUrl || null,
       },
     });
 
@@ -197,7 +196,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 };
 
-// Badge component for displaying statuses
 function Badge({
   children,
   className = '',
@@ -241,10 +239,15 @@ export default function Admin() {
     allowedUserId: string;
   }>();
   const navigation = useNavigation();
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
 
-  // Restrict to single user
+  useEffect(() => {
+    if (!isModalOpen) {
+      setEditingCampaign(null);
+    }
+  }, [isModalOpen]);
+
   if (authenticated && user?.id !== allowedUserId) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -293,6 +296,11 @@ export default function Admin() {
     );
   }
 
+  const openModal = (campaign = null) => {
+    setEditingCampaign(campaign);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950">
       <nav className="bg-slate-900/50 backdrop-blur-sm border-b border-slate-800 p-4 sticky top-0 z-50">
@@ -326,283 +334,14 @@ export default function Admin() {
               Manage Campaigns
             </h2>
             <button
-              onClick={() => {
-                setIsFormOpen(!isFormOpen);
-                setEditingCampaign(null); // Reset edit state when toggling
-              }}
+              onClick={() => openModal()}
               className="bg-[rgb(var(--primary))] text-slate-950 px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-all flex items-center gap-2"
             >
-              {isFormOpen ? 'Close Form' : 'New Campaign'}
-              {isFormOpen ? (
-                <ChevronUp className="w-5 h-5" />
-              ) : (
-                <ChevronDown className="w-5 h-5" />
-              )}
+              New Campaign
+              <ChevronDown className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Toggleable Form */}
-          {isFormOpen && (
-            <div className="bg-slate-900/50 backdrop-blur-sm p-6 rounded-lg border border-slate-800 shadow-xl mb-8">
-              <h3 className="text-2xl font-bold text-white mb-6">
-                {editingCampaign ? 'Edit Campaign' : 'Create Campaign'}
-              </h3>
-              <Form method="post" className="space-y-6">
-                <input type="hidden" name="userId" value={user?.id} />
-                {editingCampaign && (
-                  <input type="hidden" name="id" value={editingCampaign.id} />
-                )}
-                <input
-                  type="hidden"
-                  name="intent"
-                  value={editingCampaign ? 'update' : 'create'}
-                />
-                <div>
-                  <label
-                    htmlFor="title"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    Campaign Title
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    defaultValue={editingCampaign?.title}
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                    placeholder="Enter campaign title"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="description"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    Short Description
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    defaultValue={editingCampaign?.description}
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                    placeholder="Enter short description"
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="longDescription"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    Long Description
-                  </label>
-                  <textarea
-                    id="longDescription"
-                    name="longDescription"
-                    defaultValue={editingCampaign?.longDescription}
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                    placeholder="Enter detailed description"
-                    rows={5}
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="expiresAt"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    Expires At (Optional)
-                  </label>
-                  <input
-                    type="date"
-                    id="expiresAt"
-                    name="expiresAt"
-                    defaultValue={
-                      editingCampaign?.expiresAt
-                        ? new Date(editingCampaign.expiresAt)
-                            .toISOString()
-                            .split('T')[0]
-                        : ''
-                    }
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="value"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    Value
-                  </label>
-                  <input
-                    type="text"
-                    id="value"
-                    name="value"
-                    defaultValue={editingCampaign?.value}
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                    placeholder="e.g., 500 per week"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="totalAmount"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    Total Amount
-                  </label>
-                  <input
-                    type="number"
-                    id="totalAmount"
-                    name="totalAmount"
-                    defaultValue={editingCampaign?.totalAmount || 0}
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                    placeholder="Enter total reward amount"
-                    min="0"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="image"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    Image URL
-                  </label>
-                  <input
-                    type="text"
-                    id="image"
-                    name="image"
-                    defaultValue={editingCampaign?.image}
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                    placeholder="Enter image URL"
-                  />
-                </div>
-                {/* New Fields */}
-                <div>
-                  <label
-                    htmlFor="kaitoUrl"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    Kaito URL (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    id="kaitoUrl"
-                    name="kaitoUrl"
-                    defaultValue={editingCampaign?.kaitoUrl}
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                    placeholder="Enter Kaito URL"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="companyUrl"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    Company URL (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    id="companyUrl"
-                    name="companyUrl"
-                    defaultValue={editingCampaign?.companyUrl}
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                    placeholder="Enter Company URL"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="airdropUrl"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    Airdrop URL (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    id="airdropUrl"
-                    name="airdropUrl"
-                    defaultValue={editingCampaign?.airdropUrl}
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                    placeholder="Enter Airdrop URL"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="xUrl"
-                    className="block text-slate-300 text-sm font-medium mb-2"
-                  >
-                    X URL (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    id="xUrl"
-                    name="xUrl"
-                    defaultValue={editingCampaign?.xUrl}
-                    className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                    placeholder="Enter X URL"
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="featured"
-                      name="featured"
-                      defaultChecked={editingCampaign?.featured}
-                      className="h-5 w-5 text-[rgb(var(--primary))] bg-slate-800/50 border-slate-700 rounded focus:ring-[rgb(var(--primary))] focus:ring-offset-slate-900"
-                    />
-                    <label
-                      htmlFor="featured"
-                      className="text-slate-300 text-sm"
-                    >
-                      Featured
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="isAd"
-                      name="isAd"
-                      defaultChecked={editingCampaign?.isAd}
-                      className="h-5 w-5 text-[rgb(var(--primary))] bg-slate-800/50 border-slate-700 rounded focus:ring-[rgb(var(--primary))] focus:ring-offset-slate-900"
-                    />
-                    <label htmlFor="isAd" className="text-slate-300 text-sm">
-                      Is Ad
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="isNew"
-                      name="isNew"
-                      defaultChecked={editingCampaign?.isNew}
-                      className="h-5 w-5 text-[rgb(var(--primary))] bg-slate-800/50 border-slate-700 rounded focus:ring-[rgb(var(--primary))] focus:ring-offset-slate-900"
-                    />
-                    <label htmlFor="isNew" className="text-slate-300 text-sm">
-                      Is New
-                    </label>
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  disabled={navigation.state === 'submitting'}
-                  className="w-full bg-[rgb(var(--primary))] text-slate-950 px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-all disabled:opacity-50"
-                >
-                  {editingCampaign ? 'Update Campaign' : 'Create Campaign'}
-                </button>
-                {actionData?.error && (
-                  <p className="text-red-400 text-sm text-center">
-                    {actionData.error}
-                  </p>
-                )}
-                {actionData?.success && (
-                  <p className="text-emerald-400 text-sm text-center">
-                    {actionData.success}
-                  </p>
-                )}
-              </Form>
-            </div>
-          )}
-
-          {/* Campaign List */}
           <div className="space-y-6">
             <h3 className="text-2xl font-bold text-white mb-4">
               Current Campaigns
@@ -661,7 +400,6 @@ export default function Admin() {
                         • <span>Value: {campaign.value}</span> •{' '}
                         <span>Total Amount: {campaign.totalAmount}</span>
                       </div>
-                      {/* Display New Fields */}
                       <div className="text-sm text-slate-400 mt-1">
                         {campaign.kaitoUrl && (
                           <div>
@@ -719,10 +457,7 @@ export default function Admin() {
                     </div>
                     <div className="flex gap-2 ml-4">
                       <button
-                        onClick={() => {
-                          setEditingCampaign(campaign);
-                          setIsFormOpen(true);
-                        }}
+                        onClick={() => openModal(campaign)}
                         className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-all"
                       >
                         <Pencil className="w-4 h-4" />
@@ -744,6 +479,349 @@ export default function Admin() {
               ))
             )}
           </div>
+
+          <Transition appear show={isModalOpen} as={Fragment}>
+            <Dialog
+              as="div"
+              className="relative z-50"
+              onClose={() => setIsModalOpen(false)}
+            >
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <div className="fixed inset-0 bg-black bg-opacity-50" />
+              </Transition.Child>
+
+              <div className="fixed inset-0 overflow-y-auto">
+                <div className="flex min-h-full items-center justify-center p-4">
+                  <Transition.Child
+                    as={Fragment}
+                    enter="ease-out duration-300"
+                    enterFrom="opacity-0 scale-95"
+                    enterTo="opacity-100 scale-100"
+                    leave="ease-in duration-200"
+                    leaveFrom="opacity-100 scale-100"
+                    leaveTo="opacity-0 scale-95"
+                  >
+                    <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-lg bg-slate-900/95 backdrop-blur-sm p-6 border border-slate-800 shadow-xl transition-all">
+                      <Dialog.Title
+                        as="h3"
+                        className="text-2xl font-bold text-white mb-6"
+                      >
+                        {editingCampaign ? 'Edit Campaign' : 'Create Campaign'}
+                      </Dialog.Title>
+
+                      <button
+                        onClick={() => setIsModalOpen(false)}
+                        className="text-slate-400 hover:text-white transition-colors absolute top-4 right-4"
+                        aria-label="Close modal"
+                      >
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+
+                      <Form method="post" className="space-y-6">
+                        <input type="hidden" name="userId" value={user?.id} />
+                        {editingCampaign && (
+                          <input
+                            type="hidden"
+                            name="id"
+                            value={editingCampaign.id}
+                          />
+                        )}
+                        <input
+                          type="hidden"
+                          name="intent"
+                          value={editingCampaign ? 'update' : 'create'}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label
+                              htmlFor="title"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Campaign Title
+                            </label>
+                            <input
+                              type="text"
+                              id="title"
+                              name="title"
+                              defaultValue={editingCampaign?.title}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              placeholder="Enter campaign title"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="value"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Value
+                            </label>
+                            <input
+                              type="text"
+                              id="value"
+                              name="value"
+                              defaultValue={editingCampaign?.value}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              placeholder="e.g., 500 per week"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="description"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Short Description
+                            </label>
+                            <textarea
+                              id="description"
+                              name="description"
+                              defaultValue={editingCampaign?.description}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              placeholder="Enter short description"
+                              rows={3}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="totalAmount"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Total Amount
+                            </label>
+                            <input
+                              type="number"
+                              id="totalAmount"
+                              name="totalAmount"
+                              defaultValue={editingCampaign?.totalAmount || 0}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              placeholder="Enter total reward amount"
+                              min="0"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label
+                              htmlFor="longDescription"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Long Description
+                            </label>
+                            <textarea
+                              id="longDescription"
+                              name="longDescription"
+                              defaultValue={editingCampaign?.longDescription}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              placeholder="Enter detailed description"
+                              rows={5}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="expiresAt"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Expires At (Optional)
+                            </label>
+                            <input
+                              type="date"
+                              id="expiresAt"
+                              name="expiresAt"
+                              defaultValue={
+                                editingCampaign?.expiresAt
+                                  ? new Date(editingCampaign.expiresAt)
+                                      .toISOString()
+                                      .split('T')[0]
+                                  : ''
+                              }
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="image"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Image URL
+                            </label>
+                            <input
+                              type="text"
+                              id="image"
+                              name="image"
+                              defaultValue={editingCampaign?.image}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              placeholder="Enter image URL"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="kaitoUrl"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Kaito URL (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              id="kaitoUrl"
+                              name="kaitoUrl"
+                              defaultValue={editingCampaign?.kaitoUrl}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              placeholder="Enter Kaito URL"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="companyUrl"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Company URL (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              id="companyUrl"
+                              name="companyUrl"
+                              defaultValue={editingCampaign?.companyUrl}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              placeholder="Enter Company URL"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="airdropUrl"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Airdrop URL (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              id="airdropUrl"
+                              name="airdropUrl"
+                              defaultValue={editingCampaign?.airdropUrl}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              placeholder="Enter Airdrop URL"
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="xUrl"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              X URL (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              id="xUrl"
+                              name="xUrl"
+                              defaultValue={editingCampaign?.xUrl}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              placeholder="Enter X URL"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="featured"
+                              name="featured"
+                              defaultChecked={editingCampaign?.featured}
+                              className="h-5 w-5 text-[rgb(var(--primary))] bg-slate-800/50 border-slate-700 rounded focus:ring-[rgb(var(--primary))] focus:ring-offset-slate-900"
+                            />
+                            <label
+                              htmlFor="featured"
+                              className="text-slate-300 text-sm"
+                            >
+                              Featured
+                            </label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="isAd"
+                              name="isAd"
+                              defaultChecked={editingCampaign?.isAd}
+                              className="h-5 w-5 text-[rgb(var(--primary))] bg-slate-800/50 border-slate-700 rounded focus:ring-[rgb(var(--primary))] focus:ring-offset-slate-900"
+                            />
+                            <label
+                              htmlFor="isAd"
+                              className="text-slate-300 text-sm"
+                            >
+                              Is Ad
+                            </label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="isNew"
+                              name="isNew"
+                              defaultChecked={editingCampaign?.isNew}
+                              className="h-5 w-5 text-[rgb(var(--primary))] bg-slate-800/50 border-slate-700 rounded focus:ring-[rgb(var(--primary))] focus:ring-offset-slate-900"
+                            />
+                            <label
+                              htmlFor="isNew"
+                              className="text-slate-300 text-sm"
+                            >
+                              Is New
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-4 mt-6">
+                          <button
+                            type="submit"
+                            disabled={navigation.state === 'submitting'}
+                            className="flex-1 bg-[rgb(var(--primary))] text-slate-950 px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-all disabled:opacity-50"
+                          >
+                            {editingCampaign
+                              ? 'Update Campaign'
+                              : 'Create Campaign'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsModalOpen(false)}
+                            className="flex-1 bg-slate-800 text-white px-6 py-3 rounded-lg font-medium hover:bg-slate-700 transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+
+                        {actionData?.error && (
+                          <p className="text-red-400 text-sm text-center mt-2">
+                            {actionData.error}
+                          </p>
+                        )}
+                        {actionData?.success && (
+                          <p className="text-emerald-400 text-sm text-center mt-2">
+                            {actionData.success}
+                          </p>
+                        )}
+                      </Form>
+                    </Dialog.Panel>
+                  </Transition.Child>
+                </div>
+              </div>
+            </Dialog>
+          </Transition>
         </div>
       </div>
     </div>
