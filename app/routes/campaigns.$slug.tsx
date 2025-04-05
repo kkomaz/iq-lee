@@ -351,7 +351,7 @@ export default function CampaignDetail() {
                     <span>Website</span>
                   </a>
                 )}
-                {campaign.airdropUrl && (
+                {campaign.airdropUrl && campaign.kaitoUrl && (
                   <a
                     href={campaign.airdropUrl}
                     target="_blank"
@@ -370,12 +370,28 @@ export default function CampaignDetail() {
                     className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all transform hover:scale-105 hover:bg-slate-800/50 rounded-lg p-2"
                   >
                     <XIcon url={campaign.xUrl} className="w-5 h-5" />
-                    <span>Follow on X</span>
+                    <span>Follow</span>
                   </a>
                 )}
               </div>
               {/* Link to campaign.kaitoUrl */}
-              {campaign.kaitoUrl ? (
+              {campaign.airdropUrl && !campaign.kaitoUrl && (
+                <a
+                  href={campaign.airdropUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-[rgb(var(--primary))] text-slate-950 rounded-lg px-6 py-3 font-medium hover:opacity-90 transition-all text-center flex items-center justify-center gap-2"
+                >
+                  <img
+                    src={campaign.image}
+                    alt="Leaderboard Icon"
+                    className="w-6 h-6 rounded-full"
+                  />
+                  <span>View Airdrop</span>
+                </a>
+              )}
+              {/* Link to campaign.kaitoUrl */}
+              {campaign.kaitoUrl && (
                 <a
                   href={campaign.kaitoUrl}
                   target="_blank"
@@ -389,7 +405,7 @@ export default function CampaignDetail() {
                   />
                   <span>View Leaderboard</span>
                 </a>
-              ) : null}
+              )}
             </div>
           </div>
         </div>
