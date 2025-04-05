@@ -32,10 +32,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     await prisma.$connect();
     const campaigns = await prisma.campaign.findMany({
       orderBy: { createdAt: 'desc' },
+      include: {
+        type: true, // Include the associated type
+        tags: true, // Include the associated tags
+      },
     });
-    return new Response(JSON.stringify({ campaigns, allowedUserId }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const types = await prisma.type.findMany(); // Fetch all types for the dropdown
+    const tags = await prisma.tag.findMany(); // Fetch all tags for the multi-select
+    return new Response(
+      JSON.stringify({ campaigns, allowedUserId, types, tags }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   } catch (error) {
     console.error('Error in admin loader:', error);
     throw new Response('Failed to load campaigns. Please try again later.', {
@@ -66,6 +75,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const companyUrl = formData.get('companyUrl') as string;
     const airdropUrl = formData.get('airdropUrl') as string;
     const xUrl = formData.get('xUrl') as string;
+    const typeId = parseInt(formData.get('typeId') as string); // New: Get typeId
+    const tags = formData.getAll('tags') as string[]; // New: Get selected tags
 
     if (!title) {
       return new Response(
@@ -81,6 +92,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+    if (!typeId) {
+      return new Response(
+        JSON.stringify({ error: 'Campaign type is required' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     await prisma.user.upsert({
@@ -102,6 +122,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         isAd,
         isNew,
         userId,
+        typeId, // New: Set the typeId
+        tags: {
+          connect: tags.map((tagId) => ({ id: parseInt(tagId) })), // New: Connect the selected tags
+        },
         kaitoUrl: kaitoUrl || null,
         companyUrl: companyUrl || null,
         airdropUrl: airdropUrl || null,
@@ -125,16 +149,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const totalAmount = parseInt(formData.get('totalAmount') as string);
     const image = formData.get('image') as string;
     const featured = formData.get('featured') === 'on';
-    const isAd = formData.get('isAd') === 'on';
+    const isAd = formData.get('isAd') as 'on' | 'off';
     const isNew = formData.get('isNew') === 'on';
     const kaitoUrl = formData.get('kaitoUrl') as string;
     const companyUrl = formData.get('companyUrl') as string;
     const airdropUrl = formData.get('airdropUrl') as string;
     const xUrl = formData.get('xUrl') as string;
+    const typeId = parseInt(formData.get('typeId') as string); // New: Get typeId
+    const tags = formData.getAll('tags') as string[]; // New: Get selected tags
 
     if (!id || !title) {
       return new Response(
         JSON.stringify({ error: 'ID and title are required' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    if (!typeId) {
+      return new Response(
+        JSON.stringify({ error: 'Campaign type is required' }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
@@ -155,6 +190,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         featured,
         isAd,
         isNew,
+        typeId, // New: Update the typeId
+        tags: {
+          set: tags.map((tagId) => ({ id: parseInt(tagId) })), // New: Update the tags (set replaces existing tags)
+        },
         kaitoUrl: kaitoUrl || null,
         companyUrl: companyUrl || null,
         airdropUrl: airdropUrl || null,
@@ -214,13 +253,14 @@ function Badge({
 
 export function ErrorBoundary({ error }) {
   console.error('Admin ErrorBoundary caught:', error);
+  const errorMessage = error?.message || 'An unexpected error occurred';
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
       <div className="bg-slate-900/50 backdrop-blur-sm p-8 rounded-lg shadow-xl border border-slate-800 max-w-md w-full text-center">
         <h1 className="text-4xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500/80">
           Error
         </h1>
-        <p className="text-slate-300 mb-6">{error.message}</p>
+        <p className="text-slate-300 mb-6">{errorMessage}</p>
         <p className="text-slate-400">
           <Link to="/" className="text-blue-400 hover:underline">
             Back to Home
@@ -234,9 +274,11 @@ export function ErrorBoundary({ error }) {
 export default function Admin() {
   const { login, authenticated, user, logout } = usePrivy();
   const actionData = useActionData<{ error?: string; success?: string }>();
-  const { campaigns, allowedUserId } = useLoaderData<{
+  const { campaigns, allowedUserId, types, tags } = useLoaderData<{
     campaigns: any[];
     allowedUserId: string;
+    types: any[];
+    tags: any[];
   }>();
   const navigation = useNavigation();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -369,7 +411,18 @@ export default function Admin() {
                         <h4 className="text-xl font-bold text-white">
                           {campaign.title}
                         </h4>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          <Badge className="bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                            {campaign.type.name}
+                          </Badge>
+                          {campaign.tags.map((tag) => (
+                            <Badge
+                              key={tag.id}
+                              className="bg-indigo-500/10 text-indigo-500 border border-indigo-500/20"
+                            >
+                              {tag.name}
+                            </Badge>
+                          ))}
                           {campaign.featured && (
                             <Badge className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
                               Featured
@@ -671,6 +724,56 @@ export default function Admin() {
                               className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
                               placeholder="Enter image URL"
                             />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="typeId"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Campaign Type
+                            </label>
+                            <select
+                              id="typeId"
+                              name="typeId"
+                              defaultValue={editingCampaign?.typeId || ''}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all"
+                              required
+                            >
+                              <option value="" disabled>
+                                Select a type
+                              </option>
+                              {types.map((type) => (
+                                <option key={type.id} value={type.id}>
+                                  {type.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="tags"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Tags (Optional)
+                            </label>
+                            <select
+                              id="tags"
+                              name="tags"
+                              multiple
+                              defaultValue={
+                                editingCampaign?.tags.map((tag) => tag.id) || []
+                              }
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all"
+                            >
+                              {tags.map((tag) => (
+                                <option key={tag.id} value={tag.id}>
+                                  {tag.name}
+                                </option>
+                              ))}
+                            </select>
+                            <p className="text-slate-500 text-xs mt-1">
+                              Hold Ctrl (or Cmd on Mac) to select multiple tags
+                            </p>
                           </div>
                           <div>
                             <label
