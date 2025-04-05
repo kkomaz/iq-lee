@@ -33,23 +33,77 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const campaigns = await prisma.campaign.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        type: true, // Include the associated type
-        tags: true, // Include the associated tags
+        type: true,
+        tags: true,
+        chain: true,
       },
     });
-    const types = await prisma.type.findMany(); // Fetch all types for the dropdown
-    const tags = await prisma.tag.findMany(); // Fetch all tags for the multi-select
+    console.log(
+      'Raw campaigns with chain:',
+      JSON.stringify(campaigns, null, 2)
+    );
+
+    const types = await prisma.type.findMany();
+    const tags = await prisma.tag.findMany();
+    const chains = await prisma.chain.findMany();
+
+    const serializedCampaigns = campaigns.map((campaign) => ({
+      ...campaign,
+      createdAt: campaign.createdAt.toISOString(),
+      updatedAt: campaign.updatedAt.toISOString(),
+      expiresAt: campaign.expiresAt ? campaign.expiresAt.toISOString() : null,
+      type: {
+        ...campaign.type,
+        createdAt: campaign.type.createdAt.toISOString(),
+        updatedAt: campaign.type.updatedAt.toISOString(),
+      },
+      tags: campaign.tags.map((tag) => ({
+        ...tag,
+        createdAt: tag.createdAt.toISOString(),
+        updatedAt: tag.updatedAt.toISOString(),
+      })),
+      chain: campaign.chain
+        ? {
+            ...campaign.chain,
+            createdAt: campaign.chain.createdAt.toISOString(),
+            updatedAt: campaign.chain.updatedAt.toISOString(),
+          }
+        : null,
+    }));
+
+    const serializedTypes = types.map((type) => ({
+      ...type,
+      createdAt: type.createdAt.toISOString(),
+      updatedAt: type.updatedAt.toISOString(),
+    }));
+
+    const serializedTags = tags.map((tag) => ({
+      ...tag,
+      createdAt: tag.createdAt.toISOString(),
+      updatedAt: tag.updatedAt.toISOString(),
+    }));
+
+    const serializedChains = chains.map((chain) => ({
+      ...chain,
+      createdAt: chain.createdAt.toISOString(),
+      updatedAt: chain.updatedAt.toISOString(),
+    }));
+
     return new Response(
-      JSON.stringify({ campaigns, allowedUserId, types, tags }),
+      JSON.stringify({
+        campaigns: serializedCampaigns,
+        allowedUserId,
+        types: serializedTypes,
+        tags: serializedTags,
+        chains: serializedChains,
+      }),
       {
         headers: { 'Content-Type': 'application/json' },
       }
     );
   } catch (error) {
     console.error('Error in admin loader:', error);
-    throw new Response('Failed to load campaigns. Please try again later.', {
-      status: 500,
-    });
+    throw new Error('Failed to load campaigns. Please try again later.');
   } finally {
     await prisma.$disconnect();
   }
@@ -71,12 +125,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const isAd = formData.get('isAd') === 'on';
     const isNew = formData.get('isNew') === 'on';
     const userId = formData.get('userId') as string;
+    const typeId = parseInt(formData.get('typeId') as string);
+    const chainId = formData.get('chainId')
+      ? parseInt(formData.get('chainId') as string)
+      : null;
     const kaitoUrl = formData.get('kaitoUrl') as string;
     const companyUrl = formData.get('companyUrl') as string;
     const airdropUrl = formData.get('airdropUrl') as string;
     const xUrl = formData.get('xUrl') as string;
-    const typeId = parseInt(formData.get('typeId') as string); // New: Get typeId
-    const tags = formData.getAll('tags') as string[]; // New: Get selected tags
 
     if (!title) {
       return new Response(
@@ -102,6 +158,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       );
     }
+    if (chainId) {
+      const chainExists = await prisma.chain.findUnique({
+        where: { id: chainId },
+      });
+      if (!chainExists) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid chain selected' }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
 
     await prisma.user.upsert({
       where: { id: userId },
@@ -122,10 +192,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         isAd,
         isNew,
         userId,
-        typeId, // New: Set the typeId
-        tags: {
-          connect: tags.map((tagId) => ({ id: parseInt(tagId) })), // New: Connect the selected tags
-        },
+        typeId,
+        chainId,
         kaitoUrl: kaitoUrl || null,
         companyUrl: companyUrl || null,
         airdropUrl: airdropUrl || null,
@@ -149,14 +217,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const totalAmount = parseInt(formData.get('totalAmount') as string);
     const image = formData.get('image') as string;
     const featured = formData.get('featured') === 'on';
-    const isAd = formData.get('isAd') as 'on' | 'off';
+    const isAd = formData.get('isAd') === 'on';
     const isNew = formData.get('isNew') === 'on';
+    const typeId = parseInt(formData.get('typeId') as string);
+    const chainId = formData.get('chainId')
+      ? parseInt(formData.get('chainId') as string)
+      : null;
     const kaitoUrl = formData.get('kaitoUrl') as string;
     const companyUrl = formData.get('companyUrl') as string;
     const airdropUrl = formData.get('airdropUrl') as string;
     const xUrl = formData.get('xUrl') as string;
-    const typeId = parseInt(formData.get('typeId') as string); // New: Get typeId
-    const tags = formData.getAll('tags') as string[]; // New: Get selected tags
 
     if (!id || !title) {
       return new Response(
@@ -176,6 +246,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       );
     }
+    if (chainId) {
+      const chainExists = await prisma.chain.findUnique({
+        where: { id: chainId },
+      });
+      if (!chainExists) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid chain selected' }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
 
     await prisma.campaign.update({
       where: { id },
@@ -190,10 +274,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         featured,
         isAd,
         isNew,
-        typeId, // New: Update the typeId
-        tags: {
-          set: tags.map((tagId) => ({ id: parseInt(tagId) })), // New: Update the tags (set replaces existing tags)
-        },
+        typeId,
+        chainId,
         kaitoUrl: kaitoUrl || null,
         companyUrl: companyUrl || null,
         airdropUrl: airdropUrl || null,
@@ -274,11 +356,17 @@ export function ErrorBoundary({ error }) {
 export default function Admin() {
   const { login, authenticated, user, logout } = usePrivy();
   const actionData = useActionData<{ error?: string; success?: string }>();
-  const { campaigns, allowedUserId, types, tags } = useLoaderData<{
+  const { campaigns, allowedUserId, types, tags, chains } = useLoaderData<{
     campaigns: any[];
     allowedUserId: string;
-    types: any[];
-    tags: any[];
+    types: { id: number; name: string; createdAt: string; updatedAt: string }[];
+    tags: { id: number; name: string; createdAt: string; updatedAt: string }[];
+    chains: {
+      id: number;
+      name: string;
+      createdAt: string;
+      updatedAt: string;
+    }[];
   }>();
   const navigation = useNavigation();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -411,18 +499,7 @@ export default function Admin() {
                         <h4 className="text-xl font-bold text-white">
                           {campaign.title}
                         </h4>
-                        <div className="flex gap-2 flex-wrap">
-                          <Badge className="bg-purple-500/10 text-purple-500 border border-purple-500/20">
-                            {campaign.type.name}
-                          </Badge>
-                          {campaign.tags.map((tag) => (
-                            <Badge
-                              key={tag.id}
-                              className="bg-indigo-500/10 text-indigo-500 border border-indigo-500/20"
-                            >
-                              {tag.name}
-                            </Badge>
-                          ))}
+                        <div className="flex gap-2">
                           {campaign.featured && (
                             <Badge className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
                               Featured
@@ -444,6 +521,8 @@ export default function Admin() {
                         {campaign.description}
                       </p>
                       <div className="text-sm text-slate-400 mt-2">
+                        <span>Type: {campaign.type.name} • </span>
+                        <span>Chain: {campaign.chain?.name || 'None'} • </span>
                         <span>
                           Expires:{' '}
                           {campaign.expiresAt
@@ -454,6 +533,12 @@ export default function Admin() {
                         <span>Total Amount: {campaign.totalAmount}</span>
                       </div>
                       <div className="text-sm text-slate-400 mt-1">
+                        {campaign.tags.length > 0 && (
+                          <div>
+                            Tags:{' '}
+                            {campaign.tags.map((tag) => tag.name).join(', ')}
+                          </div>
+                        )}
                         {campaign.kaitoUrl && (
                           <div>
                             Kaito URL:{' '}
@@ -563,33 +648,36 @@ export default function Admin() {
                     leaveTo="opacity-0 scale-95"
                   >
                     <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-lg bg-slate-900/95 backdrop-blur-sm p-6 border border-slate-800 shadow-xl transition-all">
-                      <Dialog.Title
-                        as="h3"
-                        className="text-2xl font-bold text-white mb-6"
-                      >
-                        {editingCampaign ? 'Edit Campaign' : 'Create Campaign'}
-                      </Dialog.Title>
-
-                      <button
-                        onClick={() => setIsModalOpen(false)}
-                        className="text-slate-400 hover:text-white transition-colors absolute top-4 right-4"
-                        aria-label="Close modal"
-                      >
-                        <svg
-                          className="w-6 h-6"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
+                      <div className="flex justify-between items-center mb-6">
+                        <Dialog.Title
+                          as="h3"
+                          className="text-2xl font-bold text-white"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
+                          {editingCampaign
+                            ? 'Edit Campaign'
+                            : 'Create Campaign'}
+                        </Dialog.Title>
+                        <button
+                          onClick={() => setIsModalOpen(false)}
+                          className="text-slate-400 hover:text-white transition-colors"
+                          aria-label="Close modal"
+                        >
+                          <svg
+                            className="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
 
                       <Form method="post" className="space-y-6">
                         <input type="hidden" name="userId" value={user?.id} />
@@ -625,6 +713,28 @@ export default function Admin() {
                           </div>
                           <div>
                             <label
+                              htmlFor="typeId"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Campaign Type
+                            </label>
+                            <select
+                              id="typeId"
+                              name="typeId"
+                              defaultValue={editingCampaign?.typeId || ''}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all"
+                              required
+                            >
+                              <option value="">Select Type</option>
+                              {types.map((type) => (
+                                <option key={type.id} value={type.id}>
+                                  {type.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label
                               htmlFor="value"
                               className="block text-slate-300 text-sm font-medium mb-2"
                             >
@@ -638,6 +748,27 @@ export default function Admin() {
                               className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
                               placeholder="e.g., 500 per week"
                             />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="chainId"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Chain (Optional)
+                            </label>
+                            <select
+                              id="chainId"
+                              name="chainId"
+                              defaultValue={editingCampaign?.chainId || ''}
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all"
+                            >
+                              <option value="">No Chain</option>
+                              {chains.map((chain) => (
+                                <option key={chain.id} value={chain.id}>
+                                  {chain.name}
+                                </option>
+                              ))}
+                            </select>
                           </div>
                           <div>
                             <label
@@ -724,56 +855,6 @@ export default function Admin() {
                               className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
                               placeholder="Enter image URL"
                             />
-                          </div>
-                          <div>
-                            <label
-                              htmlFor="typeId"
-                              className="block text-slate-300 text-sm font-medium mb-2"
-                            >
-                              Campaign Type
-                            </label>
-                            <select
-                              id="typeId"
-                              name="typeId"
-                              defaultValue={editingCampaign?.typeId || ''}
-                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all"
-                              required
-                            >
-                              <option value="" disabled>
-                                Select a type
-                              </option>
-                              {types.map((type) => (
-                                <option key={type.id} value={type.id}>
-                                  {type.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label
-                              htmlFor="tags"
-                              className="block text-slate-300 text-sm font-medium mb-2"
-                            >
-                              Tags (Optional)
-                            </label>
-                            <select
-                              id="tags"
-                              name="tags"
-                              multiple
-                              defaultValue={
-                                editingCampaign?.tags.map((tag) => tag.id) || []
-                              }
-                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all"
-                            >
-                              {tags.map((tag) => (
-                                <option key={tag.id} value={tag.id}>
-                                  {tag.name}
-                                </option>
-                              ))}
-                            </select>
-                            <p className="text-slate-500 text-xs mt-1">
-                              Hold Ctrl (or Cmd on Mac) to select multiple tags
-                            </p>
                           </div>
                           <div>
                             <label

@@ -7,55 +7,61 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Existing User model (unchanged)
 model User {
-  id        String     @id // Privy user ID
+  id        String     @id
   email     String?    @unique
-  campaigns Campaign[] // One-to-many relation with campaigns
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  campaigns Campaign[]
 }
 
-// New Type model to differentiate between Kaito and Airdrop campaigns
 model Type {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique // e.g., "Kaito" or "Airdrop"
-  campaigns Campaign[] // One-to-many relation with campaigns
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  campaigns Campaign[]
 }
 
-// New Tags model to store tags like "DeFi", "NFT", "Layer 1", etc.
 model Tag {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique // e.g., "DeFi", "NFT", "Layer 1"
-  campaigns Campaign[] @relation("CampaignTags") // Many-to-many relation with campaigns
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  campaigns Campaign[] @relation("CampaignTags")
 }
 
-// Updated Campaign model (without score, rating, and requirements)
+model Chain {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  campaigns Campaign[]
+}
+
 model Campaign {
-  id             Int       @id @default(autoincrement())
-  title          String
-  description    String
+  id              Int       @id @default(autoincrement())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  description     String
+  expiresAt       DateTime?
+  featured        Boolean   @default(false)
+  image           String
+  isAd            Boolean   @default(false)
+  isNew           Boolean   @default(false)
+  title           String
+  value           String
   longDescription String
-  expiresAt      DateTime?
-  value          String
-  totalAmount    Int
-  image          String
-  featured       Boolean   @default(false)
-  isNew          Boolean   @default(false)
-  isAd           Boolean   @default(false)
-  userId         String
-  user           User      @relation(fields: [userId], references: [id])
-  typeId         Int       // Foreign key to Type
-  type           Type      @relation(fields: [typeId], references: [id])
-  tags           Tag[]     @relation("CampaignTags") // Many-to-many relation with tags
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  kaitoUrl       String?   // Relevant for Kaito campaigns
-  companyUrl     String?   // Relevant for Kaito campaigns
-  airdropUrl     String?   // Relevant for Airdrop campaigns
-  xUrl           String?   // Relevant for both
+  totalAmount     Int
+  airdropUrl      String?
+  companyUrl      String?
+  kaitoUrl        String?
+  xUrl            String?
+  typeId          Int
+  type            Type      @relation(fields: [typeId], references: [id])
+  chainId         Int?
+  chain           Chain?    @relation(fields: [chainId], references: [id])
+  tags            Tag[]     @relation("CampaignTags")
 }
