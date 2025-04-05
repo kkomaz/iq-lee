@@ -12,6 +12,7 @@ import prisma from '~/lib/prisma.server';
 import { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
+import Select from 'react-select'; // Added react-select import
 
 export const meta = () => {
   return [
@@ -38,10 +39,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         chain: true,
       },
     });
-    console.log(
-      'Raw campaigns with chain:',
-      JSON.stringify(campaigns, null, 2)
-    );
 
     const types = await prisma.type.findMany();
     const tags = await prisma.tag.findMany();
@@ -133,14 +130,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const companyUrl = formData.get('companyUrl') as string;
     const airdropUrl = formData.get('airdropUrl') as string;
     const xUrl = formData.get('xUrl') as string;
+    const tagIds = formData.getAll('tags').map((id) => parseInt(id as string));
 
     if (!title) {
       return new Response(
         JSON.stringify({ error: 'Campaign title is required' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
     if (!userId) {
@@ -152,10 +147,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!typeId) {
       return new Response(
         JSON.stringify({ error: 'Campaign type is required' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
     if (chainId) {
@@ -165,10 +157,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       if (!chainExists) {
         return new Response(
           JSON.stringify({ error: 'Invalid chain selected' }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
         );
       }
     }
@@ -198,6 +187,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         companyUrl: companyUrl || null,
         airdropUrl: airdropUrl || null,
         xUrl: xUrl || null,
+        tags: {
+          connect: tagIds.map((id) => ({ id })),
+        },
       },
     });
 
@@ -227,23 +219,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const companyUrl = formData.get('companyUrl') as string;
     const airdropUrl = formData.get('airdropUrl') as string;
     const xUrl = formData.get('xUrl') as string;
+    const tagIds = formData.getAll('tags').map((id) => parseInt(id as string));
 
     if (!id || !title) {
       return new Response(
         JSON.stringify({ error: 'ID and title are required' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
     if (!typeId) {
       return new Response(
         JSON.stringify({ error: 'Campaign type is required' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
     if (chainId) {
@@ -253,10 +240,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       if (!chainExists) {
         return new Response(
           JSON.stringify({ error: 'Invalid chain selected' }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
         );
       }
     }
@@ -280,6 +264,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         companyUrl: companyUrl || null,
         airdropUrl: airdropUrl || null,
         xUrl: xUrl || null,
+        tags: {
+          set: tagIds.map((id) => ({ id })),
+        },
       },
     });
 
@@ -294,10 +281,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!id) {
       return new Response(
         JSON.stringify({ error: 'Campaign ID is required' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -371,13 +355,21 @@ export default function Admin() {
   const navigation = useNavigation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
-  const [filter, setFilter] = useState<'all' | 'kaito' | 'airdrop'>('all'); // Filter state
+  const [filter, setFilter] = useState<'all' | 'kaito' | 'airdrop'>('all');
+  const [selectedTags, setSelectedTags] = useState<
+    { value: number; label: string }[]
+  >([]);
 
   useEffect(() => {
     if (!isModalOpen) {
       setEditingCampaign(null);
+      setSelectedTags([]);
+    } else if (editingCampaign) {
+      setSelectedTags(
+        editingCampaign.tags.map((tag) => ({ value: tag.id, label: tag.name }))
+      );
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, editingCampaign]);
 
   if (authenticated && user?.id !== allowedUserId) {
     return (
@@ -432,7 +424,6 @@ export default function Admin() {
     setIsModalOpen(true);
   };
 
-  // Replace the existing filteredCampaigns logic
   const filteredCampaigns = campaigns.filter((campaign) => {
     if (filter === 'all') return true;
     if (filter === 'kaito') return campaign.type.name === 'Kaito';
@@ -481,7 +472,6 @@ export default function Admin() {
             </button>
           </div>
 
-          {/* Filter Buttons */}
           <div className="mb-6 flex gap-4">
             <button
               onClick={() => setFilter('all')}
@@ -862,6 +852,79 @@ export default function Admin() {
                               placeholder="Enter detailed description"
                               rows={5}
                             />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label
+                              htmlFor="tags"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Tags
+                            </label>
+                            <Select
+                              isMulti
+                              name="tags"
+                              options={tags.map((tag) => ({
+                                value: tag.id,
+                                label: tag.name,
+                              }))}
+                              value={selectedTags}
+                              onChange={(selectedOptions) =>
+                                setSelectedTags(selectedOptions || [])
+                              }
+                              className="text-black"
+                              styles={{
+                                control: (base) => ({
+                                  ...base,
+                                  backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                                  borderColor: '#334155',
+                                  color: 'white',
+                                  '&:hover': {
+                                    borderColor: 'rgb(var(--primary))',
+                                  },
+                                }),
+                                menu: (base) => ({
+                                  ...base,
+                                  backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                                }),
+                                option: (base, state) => ({
+                                  ...base,
+                                  backgroundColor: state.isSelected
+                                    ? 'rgb(var(--primary))'
+                                    : state.isFocused
+                                    ? '#4b5e77'
+                                    : 'transparent',
+                                  color: state.isSelected ? 'black' : 'white',
+                                }),
+                                multiValue: (base) => ({
+                                  ...base,
+                                  backgroundColor: 'rgb(var(--primary))',
+                                  color: 'black',
+                                }),
+                                multiValueLabel: (base) => ({
+                                  ...base,
+                                  color: 'black',
+                                }),
+                                multiValueRemove: (base) => ({
+                                  ...base,
+                                  color: 'black',
+                                  '&:hover': { backgroundColor: '#d97706' },
+                                }),
+                                input: (base) => ({
+                                  ...base,
+                                  color: 'white',
+                                }),
+                              }}
+                              placeholder="Select tags..."
+                            />
+                            {selectedTags.map((tag) => (
+                              <input
+                                key={tag.value}
+                                type="hidden"
+                                name="tags"
+                                value={tag.value}
+                              />
+                            ))}
                           </div>
                           <div>
                             <label
