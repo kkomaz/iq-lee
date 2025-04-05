@@ -9,10 +9,12 @@ import {
 } from '@remix-run/react';
 import { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import prisma from '~/lib/prisma.server';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
-import Select from 'react-select'; // Added react-select import
+import React, { Fragment } from 'react';
+
+// Dynamically load react-select on the client side with React.lazy
+const Select = React.lazy(() => import('react-select'));
 
 export const meta = () => {
   return [
@@ -853,79 +855,6 @@ export default function Admin() {
                               rows={5}
                             />
                           </div>
-
-                          <div className="md:col-span-2">
-                            <label
-                              htmlFor="tags"
-                              className="block text-slate-300 text-sm font-medium mb-2"
-                            >
-                              Tags
-                            </label>
-                            <Select
-                              isMulti
-                              name="tags"
-                              options={tags.map((tag) => ({
-                                value: tag.id,
-                                label: tag.name,
-                              }))}
-                              value={selectedTags}
-                              onChange={(selectedOptions) =>
-                                setSelectedTags(selectedOptions || [])
-                              }
-                              className="text-black"
-                              styles={{
-                                control: (base) => ({
-                                  ...base,
-                                  backgroundColor: 'rgba(30, 41, 59, 0.5)',
-                                  borderColor: '#334155',
-                                  color: 'white',
-                                  '&:hover': {
-                                    borderColor: 'rgb(var(--primary))',
-                                  },
-                                }),
-                                menu: (base) => ({
-                                  ...base,
-                                  backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                                }),
-                                option: (base, state) => ({
-                                  ...base,
-                                  backgroundColor: state.isSelected
-                                    ? 'rgb(var(--primary))'
-                                    : state.isFocused
-                                    ? '#4b5e77'
-                                    : 'transparent',
-                                  color: state.isSelected ? 'black' : 'white',
-                                }),
-                                multiValue: (base) => ({
-                                  ...base,
-                                  backgroundColor: 'rgb(var(--primary))',
-                                  color: 'black',
-                                }),
-                                multiValueLabel: (base) => ({
-                                  ...base,
-                                  color: 'black',
-                                }),
-                                multiValueRemove: (base) => ({
-                                  ...base,
-                                  color: 'black',
-                                  '&:hover': { backgroundColor: '#d97706' },
-                                }),
-                                input: (base) => ({
-                                  ...base,
-                                  color: 'white',
-                                }),
-                              }}
-                              placeholder="Select tags..."
-                            />
-                            {selectedTags.map((tag) => (
-                              <input
-                                key={tag.value}
-                                type="hidden"
-                                name="tags"
-                                value={tag.value}
-                              />
-                            ))}
-                          </div>
                           <div>
                             <label
                               htmlFor="expiresAt"
@@ -1026,6 +955,80 @@ export default function Admin() {
                               className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
                               placeholder="Enter X URL"
                             />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label
+                              htmlFor="tags"
+                              className="block text-slate-300 text-sm font-medium mb-2"
+                            >
+                              Tags
+                            </label>
+                            <Suspense fallback={<p>Loading tags...</p>}>
+                              <Select
+                                isMulti
+                                name="tags"
+                                options={tags.map((tag) => ({
+                                  value: tag.id,
+                                  label: tag.name,
+                                }))}
+                                value={selectedTags}
+                                onChange={(selectedOptions) =>
+                                  setSelectedTags(selectedOptions || [])
+                                }
+                                className="text-black"
+                                styles={{
+                                  control: (base) => ({
+                                    ...base,
+                                    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                                    borderColor: '#334155',
+                                    color: 'white',
+                                    '&:hover': {
+                                      borderColor: 'rgb(var(--primary))',
+                                    },
+                                  }),
+                                  menu: (base) => ({
+                                    ...base,
+                                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                                  }),
+                                  option: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: state.isSelected
+                                      ? 'rgb(var(--primary))'
+                                      : state.isFocused
+                                      ? '#4b5e77'
+                                      : 'transparent',
+                                    color: state.isSelected ? 'black' : 'white',
+                                  }),
+                                  multiValue: (base) => ({
+                                    ...base,
+                                    backgroundColor: 'rgb(var(--primary))',
+                                    color: 'black',
+                                  }),
+                                  multiValueLabel: (base) => ({
+                                    ...base,
+                                    color: 'black',
+                                  }),
+                                  multiValueRemove: (base) => ({
+                                    ...base,
+                                    color: 'black',
+                                    '&:hover': { backgroundColor: '#d97706' },
+                                  }),
+                                  input: (base) => ({
+                                    ...base,
+                                    color: 'white',
+                                  }),
+                                }}
+                                placeholder="Select tags..."
+                              />
+                            </Suspense>
+                            {selectedTags.map((tag) => (
+                              <input
+                                key={tag.value}
+                                type="hidden"
+                                name="tags"
+                                value={tag.value}
+                              />
+                            ))}
                           </div>
                         </div>
 
