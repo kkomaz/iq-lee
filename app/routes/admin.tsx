@@ -371,6 +371,7 @@ export default function Admin() {
   const navigation = useNavigation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
+  const [filter, setFilter] = useState<'all' | 'kaito' | 'airdrop'>('all'); // Filter state
 
   useEffect(() => {
     if (!isModalOpen) {
@@ -431,6 +432,14 @@ export default function Admin() {
     setIsModalOpen(true);
   };
 
+  // Replace the existing filteredCampaigns logic
+  const filteredCampaigns = campaigns.filter((campaign) => {
+    if (filter === 'all') return true;
+    if (filter === 'kaito') return campaign.type.name === 'Kaito';
+    if (filter === 'airdrop') return campaign.type.name === 'Airdrop';
+    return false;
+  });
+
   return (
     <div className="min-h-screen bg-slate-950">
       <nav className="bg-slate-900/50 backdrop-blur-sm border-b border-slate-800 p-4 sticky top-0 z-50">
@@ -472,16 +481,51 @@ export default function Admin() {
             </button>
           </div>
 
+          {/* Filter Buttons */}
+          <div className="mb-6 flex gap-4">
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                filter === 'all'
+                  ? 'bg-[rgb(var(--primary))] text-slate-950'
+                  : 'bg-slate-800 text-white hover:bg-slate-700'
+              }`}
+            >
+              All Campaigns
+            </button>
+            <button
+              onClick={() => setFilter('kaito')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                filter === 'kaito'
+                  ? 'bg-[rgb(var(--primary))] text-slate-950'
+                  : 'bg-slate-800 text-white hover:bg-slate-700'
+              }`}
+            >
+              Kaito Campaigns
+            </button>
+            <button
+              onClick={() => setFilter('airdrop')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                filter === 'airdrop'
+                  ? 'bg-[rgb(var(--primary))] text-slate-950'
+                  : 'bg-slate-800 text-white hover:bg-slate-700'
+              }`}
+            >
+              Airdrop Campaigns
+            </button>
+          </div>
+
           <div className="space-y-6">
             <h3 className="text-2xl font-bold text-white mb-4">
               Current Campaigns
             </h3>
-            {campaigns.length === 0 ? (
+            {filteredCampaigns.length === 0 ? (
               <p className="text-slate-400 text-center">
-                No campaigns yet. Create one to get started!
+                No campaigns match the selected filter. Try a different filter
+                or create a new campaign!
               </p>
             ) : (
-              campaigns.map((campaign) => (
+              filteredCampaigns.map((campaign) => (
                 <div
                   key={campaign.id}
                   className="bg-slate-900/50 backdrop-blur-sm p-4 rounded-lg border border-slate-800 hover:scale-[1.02] transition-all"

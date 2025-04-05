@@ -400,19 +400,17 @@ export default function Index() {
 
       <Lamp>
         <div className="container mx-auto px-4 sm:px-6 py-8">
-          <div className="mb-12 sm:mb-16">
+          <div className="mb-4 sm:mb-8">
             <div className="p-4 max-w-7xl mx-auto w-full pt-24 sm:pt-32 md:pt-24">
               <h1 className="text-3xl sm:text-4xl md:text-7xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500/80">
                 Discover Exclusive <br /> Rewards & Campaigns
               </h1>
               <p className="mt-4 font-normal text-sm sm:text-base text-slate-400 max-w-lg text-center mx-auto">
-                Stay ahead of the game with{' '}
+                Stay ahead of the game on exclusive airdrops with{' '}
                 <span className="text-[rgb(var(--primary))] ">
                   IncentiveIQ!
                 </span>{' '}
-                Earn rewards for engaging with projects on Kaito, climb the
-                leaderboard, and unlock exclusive perks, early access, and
-                unique opportunities.
+                <br />
               </p>
             </div>
           </div>
