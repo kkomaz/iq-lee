@@ -291,22 +291,27 @@ function slugify(text: string): string {
 }
 
 export default function Index() {
-  const { rewards, featuredRewards, campaignType, types } = useLoaderData<{
+  const {
+    rewards: initialRewards,
+    featuredRewards,
+    campaignType,
+    types,
+  } = useLoaderData<{
     rewards: any[];
     featuredRewards: any[];
     campaignType: string;
     types: any[];
   }>();
-  const submit = useSubmit();
   const navigation = useNavigation();
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('latest');
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedTab, setSelectedTab] = useState(campaignType || 'Airdrop');
+  const [filteredRewards, setFilteredRewards] = useState(initialRewards);
   const scrollPositionRef = useRef(0);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Initial setup from URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const search = params.get('search') || '';
@@ -319,6 +324,7 @@ export default function Index() {
     setSelectedTab(campaignTypeParam);
   }, []);
 
+  // Handle scroll position during navigation
   useEffect(() => {
     if (navigation.state === 'submitting') {
       scrollPositionRef.current = window.scrollY;
@@ -331,61 +337,59 @@ export default function Index() {
     }
   }, [navigation.state, location]);
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setSearchTerm(value);
+  // Client-side filtering and sorting
+  useEffect(() => {
+    let updatedRewards = [...initialRewards];
 
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
+    // Filter by campaign type
+    updatedRewards = updatedRewards.filter(
+      (reward) => reward.type?.name === selectedTab
+    );
+
+    // Filter by search term
+    if (searchTerm) {
+      updatedRewards = updatedRewards.filter(
+        (reward) =>
+          reward.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          reward.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
-    searchTimeoutRef.current = setTimeout(() => {
-      const formData = new FormData();
-      formData.set('search', value);
-      formData.set('sortBy', sortBy);
-      formData.set('sortOrder', sortOrder);
-      formData.set('campaignType', selectedTab);
-      submit(formData, { method: 'get', replace: true });
-    }, 300);
+    // Sort
+    if (sortBy === 'latest') {
+      updatedRewards.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+      });
+    } else if (sortBy === 'title') {
+      updatedRewards.sort((a, b) => {
+        const titleA = a.title.toLowerCase();
+        const titleB = b.title.toLowerCase();
+        return sortOrder === 'desc'
+          ? titleB.localeCompare(titleA)
+          : titleA.localeCompare(titleB);
+      });
+    }
+
+    setFilteredRewards(updatedRewards);
+  }, [searchTerm, sortBy, sortOrder, selectedTab, initialRewards]);
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
   };
 
   const handleSortChange = (newSortBy: string) => {
-    let newSortOrder = sortOrder;
-    if (sortBy === 'newSortBy') {
-      newSortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
-    } else {
-      newSortOrder = 'desc';
-    }
+    const newSortOrder =
+      sortBy === newSortBy ? (sortOrder === 'desc' ? 'asc' : 'desc') : 'desc';
 
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
-
-    const formData = new FormData();
-    formData.set('search', searchTerm);
-    formData.set('sortBy', newSortBy);
-    formData.set('sortOrder', newSortOrder);
-    formData.set('campaignType', selectedTab);
-    submit(formData, { method: 'get', replace: true });
   };
 
   const handleTabChange = (tab: string) => {
     setSelectedTab(tab);
-
-    const formData = new FormData();
-    formData.set('search', searchTerm);
-    formData.set('sortBy', sortBy);
-    formData.set('sortOrder', sortOrder);
-    formData.set('campaignType', tab);
-    submit(formData, { method: 'get', replace: true });
   };
-
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -441,7 +445,6 @@ export default function Index() {
               <div className="flex gap-4">
                 {[...types]
                   .sort((a, b) => {
-                    // Ensure "Airdrop" comes first, then "Kaito"
                     const order = ['Airdrop', 'Kaito'];
                     return order.indexOf(a.name) - order.indexOf(b.name);
                   })
@@ -460,50 +463,42 @@ export default function Index() {
                   ))}
               </div>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center w-full sm:w-auto">
-                <Form
-                  method="get"
-                  className="flex items-center gap-2 w-full sm:w-auto"
-                >
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <input
                     type="text"
-                    name="search"
                     value={searchTerm}
                     onChange={handleSearchChange}
                     placeholder="Search campaigns..."
                     className="p-2 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500 w-full sm:w-auto text-sm sm:text-base"
                   />
-                  <input
-                    type="hidden"
-                    name="campaignType"
-                    value={selectedTab}
-                  />
-                </Form>
+                </div>
                 <div className="flex gap-2 sm:gap-4">
                   <button
                     onClick={() => handleSortChange('latest')}
-                    className="text-[rgb(var(--primary))] hover:text-[rgb(var(--primary))] transition-colors text-sm sm:text-base"
+                    className="text-[rgb(var(--primary))] hover:text-[rgb(var(--primary))] transition-colors flex items-center gap-1 text-sm sm:text-base"
                   >
-                    Latest
+                    Latest{' '}
+                    {sortBy === 'latest' && (sortOrder === 'desc' ? '↓' : '↑')}
                   </button>
                   <button
                     onClick={() => handleSortChange('title')}
                     className="text-[rgb(var(--primary))] hover:text-[rgb(var(--primary))] transition-colors flex items-center gap-1 text-sm sm:text-base"
                   >
                     Title{' '}
-                    {sortBy === 'title' && sortOrder === 'asc' ? '↑' : '↓'}
+                    {sortBy === 'title' && (sortOrder === 'desc' ? '↓' : '↑')}
                   </button>
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {rewards.length === 0 ? (
+              {filteredRewards.length === 0 ? (
                 <p className="text-slate-400 col-span-full text-center text-sm sm:text-base">
                   {searchTerm
                     ? 'No campaigns match your search.'
                     : `No ${selectedTab} campaigns available yet.`}
                 </p>
               ) : (
-                rewards.map((reward) => (
+                filteredRewards.map((reward) => (
                   <RewardCard
                     key={reward.id}
                     reward={reward}
