@@ -3,7 +3,6 @@ import {
   Link,
   useLoaderData,
   Form,
-  useSubmit,
   useNavigation,
   useLocation,
 } from '@remix-run/react';
@@ -39,13 +38,11 @@ export const meta: MetaFunction = () => {
       type: 'image/png',
       href: '/favicon.png',
     },
-    // Open Graph tags for social media sharing
     { property: 'og:title', content: title },
     { property: 'og:description', content: description },
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: url },
     { property: 'og:image', content: image },
-    // Twitter Card tags
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:title', content: title },
     { name: 'twitter:description', content: description },
@@ -58,22 +55,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchTerm = url.searchParams.get('search')?.toLowerCase() || '';
   const sortBy = url.searchParams.get('sortBy') || 'latest';
   const sortOrder = url.searchParams.get('sortOrder') || 'desc';
-  const campaignType = url.searchParams.get('campaignType') || 'Airdrop'; // Default to Airdrop
+  const campaignType = url.searchParams.get('campaignType') || 'Airdrop'; // Used for initial tab selection
 
-  // Fetch all types to get the IDs for "Airdrop" and "Kaito"
+  // Fetch all types
   const types = await prisma.type.findMany();
-  const airdropType = types.find((type) => type.name === 'Airdrop');
-  const kaitoType = types.find((type) => type.name === 'Kaito');
 
-  if (!airdropType || !kaitoType) {
-    throw new Response('Campaign types not found.', { status: 500 });
-  }
-
-  // Fetch campaigns based on the selected campaign type
+  // Fetch ALL campaigns, not filtered by type
   const campaigns = await prisma.campaign.findMany({
-    where: {
-      typeId: campaignType === 'Airdrop' ? airdropType.id : kaitoType.id,
-    },
     orderBy: { createdAt: 'desc' },
     include: {
       type: true,
@@ -81,20 +69,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
   });
 
-  // Fetch all campaigns for featured section (not filtered by type)
-  const allCampaigns = await prisma.campaign.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      type: true,
-      tags: true,
-    },
-  });
-
-  const featuredCampaigns = allCampaigns
+  const featuredCampaigns = campaigns
     .filter((c) => c.featured && !c.isAd)
     .slice(0, 2);
 
-  const adCampaigns = allCampaigns.filter((c) => c.isAd).slice(0, 2);
+  const adCampaigns = campaigns.filter((c) => c.isAd).slice(0, 2);
 
   const sortedFeatured = [];
   sortedFeatured.push(...featuredCampaigns);
