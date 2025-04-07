@@ -131,7 +131,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       : null;
     const kaitoUrl = formData.get('kaitoUrl') as string;
     const companyUrl = formData.get('companyUrl') as string;
-    const airdropUrl = formData.get('airdropUrl') as string;
+    const airddropUrl = formData.get('airdropUrl') as string;
     const xUrl = formData.get('xUrl') as string;
     const tagIds = formData.getAll('tags').map((id) => parseInt(id as string));
 
@@ -188,7 +188,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         chainId,
         kaitoUrl: kaitoUrl || null,
         companyUrl: companyUrl || null,
-        airdropUrl: airdropUrl || null,
+        airdropUrl: airddropUrl || null,
         xUrl: xUrl || null,
         tags: {
           connect: tagIds.map((id) => ({ id })),
@@ -362,6 +362,7 @@ export default function Admin() {
   const [selectedTags, setSelectedTags] = useState<
     { value: number; label: string }[]
   >([]);
+  const [searchTerm, setSearchTerm] = useState(''); // New state for search term
 
   useEffect(() => {
     if (!isModalOpen) {
@@ -406,11 +407,22 @@ export default function Admin() {
   };
 
   const filteredCampaigns = campaigns.filter((campaign) => {
-    if (filter === 'all') return true;
-    if (filter === 'kaito') return campaign.type.name === 'Kaito';
-    if (filter === 'airdrop') return campaign.type.name === 'Airdrop';
-    return false;
+    const matchesFilter =
+      filter === 'all' ||
+      (filter === 'kaito' && campaign.type.name === 'Kaito') ||
+      (filter === 'airdrop' && campaign.type.name === 'Airdrop');
+
+    const matchesSearch = searchTerm
+      ? campaign.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        campaign.description.toLowerCase().includes(searchTerm.toLowerCase())
+      : true;
+
+    return matchesFilter && matchesSearch;
   });
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -453,37 +465,46 @@ export default function Admin() {
             </button>
           </div>
 
-          <div className="mb-6 flex gap-4">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                filter === 'all'
-                  ? 'bg-[rgb(var(--primary))] text-slate-950'
-                  : 'bg-slate-800 text-white hover:bg-slate-700'
-              }`}
-            >
-              All Campaigns
-            </button>
-            <button
-              onClick={() => setFilter('kaito')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                filter === 'kaito'
-                  ? 'bg-[rgb(var(--primary))] text-slate-950'
-                  : 'bg-slate-800 text-white hover:bg-slate-700'
-              }`}
-            >
-              Kaito Campaigns
-            </button>
-            <button
-              onClick={() => setFilter('airdrop')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                filter === 'airdrop'
-                  ? 'bg-[rgb(var(--primary))] text-slate-950'
-                  : 'bg-slate-800 text-white hover:bg-slate-700'
-              }`}
-            >
-              Airdrop Campaigns
-            </button>
+          <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex gap-4">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  filter === 'all'
+                    ? 'bg-[rgb(var(--primary))] text-slate-950'
+                    : 'bg-slate-800 text-white hover:bg-slate-700'
+                }`}
+              >
+                All Campaigns
+              </button>
+              <button
+                onClick={() => setFilter('kaito')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  filter === 'kaito'
+                    ? 'bg-[rgb(var(--primary))] text-slate-950'
+                    : 'bg-slate-800 text-white hover:bg-slate-700'
+                }`}
+              >
+                Kaito Campaigns
+              </button>
+              <button
+                onClick={() => setFilter('airdrop')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  filter === 'airdrop'
+                    ? 'bg-[rgb(var(--primary))] text-slate-950'
+                    : 'bg-slate-800 text-white hover:bg-slate-700'
+                }`}
+              >
+                Airdrop Campaigns
+              </button>
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search campaigns by title or description..."
+              className="w-full sm:w-64 p-2 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+            />
           </div>
 
           <div className="space-y-6">
@@ -492,8 +513,9 @@ export default function Admin() {
             </h3>
             {filteredCampaigns.length === 0 ? (
               <p className="text-slate-400 text-center">
-                No campaigns match the selected filter. Try a different filter
-                or create a new campaign!
+                {searchTerm
+                  ? 'No campaigns match your search.'
+                  : 'No campaigns match the selected filter. Try a different filter or create a new campaign!'}
               </p>
             ) : (
               filteredCampaigns.map((campaign) => (
@@ -915,7 +937,7 @@ export default function Admin() {
                               id="airdropUrl"
                               name="airdropUrl"
                               defaultValue={editingCampaign?.airdropUrl}
-                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
+                              className="w-full p-3 rounded-lg bg-slate-800/50 text.readthedocs.com-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
                               placeholder="Enter Airdrop URL"
                             />
                           </div>

@@ -55,12 +55,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchTerm = url.searchParams.get('search')?.toLowerCase() || '';
   const sortBy = url.searchParams.get('sortBy') || 'latest';
   const sortOrder = url.searchParams.get('sortOrder') || 'desc';
-  const campaignType = url.searchParams.get('campaignType') || 'Airdrop'; // Used for initial tab selection
+  const campaignType = url.searchParams.get('campaignType') || 'Airdrop';
 
-  // Fetch all types
   const types = await prisma.type.findMany();
-
-  // Fetch ALL campaigns, not filtered by type
   const campaigns = await prisma.campaign.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
@@ -72,17 +69,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const featuredCampaigns = campaigns
     .filter((c) => c.featured && !c.isAd)
     .slice(0, 2);
-
   const adCampaigns = campaigns.filter((c) => c.isAd).slice(0, 2);
 
-  const sortedFeatured = [];
-  sortedFeatured.push(...featuredCampaigns);
-
+  const sortedFeatured = [...featuredCampaigns, ...adCampaigns];
   const adSpots = 2;
   const adCount = adCampaigns.length;
-  sortedFeatured.push(...adCampaigns);
-
   const placeholdersNeeded = adSpots - adCount;
+
   for (let i = 0; i < placeholdersNeeded; i++) {
     sortedFeatured.push({
       id: `placeholder-${i}`,
@@ -110,19 +103,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (sortBy === 'latest') {
-    rewards.sort((a, b) => {
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
-      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-    });
+    rewards.sort((a, b) =>
+      sortOrder === 'desc'
+        ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
   } else if (sortBy === 'title') {
-    rewards.sort((a, b) => {
-      const titleA = a.title.toLowerCase();
-      const titleB = b.title.toLowerCase();
-      return sortOrder === 'desc'
-        ? titleB.localeCompare(titleA)
-        : titleA.localeCompare(titleB);
-    });
+    rewards.sort((a, b) =>
+      sortOrder === 'desc'
+        ? b.title.localeCompare(a.title)
+        : a.title.localeCompare(b.title)
+    );
   }
 
   return new Response(
@@ -142,7 +133,7 @@ function Badge({
 }) {
   return (
     <span
-      className={`px-2 py-1 text-xs sm:text-xs font-semibold rounded-full ${className}`}
+      className={`px-2 py-1 text-xs font-semibold rounded-full ${className}`}
     >
       {children}
     </span>
@@ -180,16 +171,16 @@ function RewardCard({
           reward.isPlaceholder ? '' : 'hover:scale-[1.02]'
         } transition-all h-full bg-slate-900/50 backdrop-blur-sm ${borderClass}`}
       >
-        <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full overflow-hidden border-4 border-slate-900 shadow-xl">
+        <div className="absolute -top-4 -right-4 w-12 h-12 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-4 border-slate-900 shadow-xl">
           <img
             src={reward.image}
             alt={reward.title}
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="flex justify-between items-start mb-3">
+        <div className="flex justify-between items-start mb-3 p-4 sm:p-3 md:p-4">
           <div className="flex flex-col gap-2">
-            <h3 className="text-lg sm:text-xl font-bold text-white">
+            <h3 className="text-lg sm:text-base md:text-lg font-bold text-white line-clamp-1">
               {reward.title}
             </h3>
             <div className="flex gap-2 flex-wrap">
@@ -222,15 +213,15 @@ function RewardCard({
             </div>
           </div>
         </div>
-        <p className="text-slate-300 mb-4 line-clamp-2 text-sm sm:text-base">
+        <p className="text-slate-300 mb-4 px-4 sm:px-3 md:px-4 text-sm sm:text-xs md:text-sm line-clamp-2">
           {reward.description}
         </p>
-        <div className="mb-4">
-          <div className="text-lg sm:text-xl font-bold text-[rgb(var(--primary))] mb-0.5">
+        <div className="mb-4 px-4 sm:px-3 md:px-4">
+          <div className="text-lg sm:text-base md:text-lg font-bold text-[rgb(var(--primary))] mb-0.5">
             {reward.value}
           </div>
           {!reward.isPlaceholder && (
-            <div className="text-xs sm:text-sm text-emerald-300">
+            <div className="text-xs sm:text-xs md:text-sm text-emerald-300">
               {reward.totalAmount === 0 ? (
                 <span>(Est. TBD)</span>
               ) : (
@@ -239,12 +230,12 @@ function RewardCard({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 text-slate-400 text-xs sm:text-sm">
+        <div className="flex items-center gap-2 text-slate-400 text-xs sm:text-xs md:text-sm px-4 sm:px-3 md:px-4 pb-4">
           {reward.isPlaceholder ? (
             <span>Email: {reward.email}</span>
           ) : (
             <>
-              <Clock className="w-4 h-4" />
+              <Clock className="w-4 h-4 sm:w-3 sm:h-3 md:w-4 md:h-4" />
               <span>
                 Expires:{' '}
                 {reward.expiresAt
@@ -290,7 +281,6 @@ export default function Index() {
   const [filteredRewards, setFilteredRewards] = useState(initialRewards);
   const scrollPositionRef = useRef(0);
 
-  // Initial setup from URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const search = params.get('search') || '';
@@ -303,7 +293,6 @@ export default function Index() {
     setSelectedTab(campaignTypeParam);
   }, []);
 
-  // Handle scroll position during navigation
   useEffect(() => {
     if (navigation.state === 'submitting') {
       scrollPositionRef.current = window.scrollY;
@@ -316,16 +305,11 @@ export default function Index() {
     }
   }, [navigation.state, location]);
 
-  // Client-side filtering and sorting
   useEffect(() => {
     let updatedRewards = [...initialRewards];
-
-    // Filter by campaign type
     updatedRewards = updatedRewards.filter(
       (reward) => reward.type?.name === selectedTab
     );
-
-    // Filter by search term
     if (searchTerm) {
       updatedRewards = updatedRewards.filter(
         (reward) =>
@@ -333,24 +317,19 @@ export default function Index() {
           reward.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
-    // Sort
     if (sortBy === 'latest') {
-      updatedRewards.sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
-        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-      });
+      updatedRewards.sort((a, b) =>
+        sortOrder === 'desc'
+          ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
     } else if (sortBy === 'title') {
-      updatedRewards.sort((a, b) => {
-        const titleA = a.title.toLowerCase();
-        const titleB = b.title.toLowerCase();
-        return sortOrder === 'desc'
-          ? titleB.localeCompare(titleA)
-          : titleA.localeCompare(titleB);
-      });
+      updatedRewards.sort((a, b) =>
+        sortOrder === 'desc'
+          ? b.title.localeCompare(a.title)
+          : a.title.localeCompare(b.title)
+      );
     }
-
     setFilteredRewards(updatedRewards);
   }, [searchTerm, sortBy, sortOrder, selectedTab, initialRewards]);
 
@@ -361,7 +340,6 @@ export default function Index() {
   const handleSortChange = (newSortBy: string) => {
     const newSortOrder =
       sortBy === newSortBy ? (sortOrder === 'desc' ? 'asc' : 'desc') : 'desc';
-
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
   };
@@ -390,9 +368,7 @@ export default function Index() {
               </h1>
               <p className="mt-4 font-normal text-sm sm:text-base text-slate-400 max-w-lg text-center mx-auto">
                 Stay ahead of the game on exclusive airdrops with{' '}
-                <span className="text-[rgb(var(--primary))] ">
-                  IncentiveIQ!
-                </span>{' '}
+                <span className="text-[rgb(var(--primary))]">IncentiveIQ!</span>{' '}
                 <br />
               </p>
             </div>
@@ -421,7 +397,7 @@ export default function Index() {
 
           <div>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
-              <div className="flex gap-4">
+              <div className="flex gap-4 flex-wrap sm:flex-nowrap">
                 {[...types]
                   .sort((a, b) => {
                     const order = ['Airdrop', 'Kaito'];
@@ -431,7 +407,7 @@ export default function Index() {
                     <button
                       key={type.name}
                       onClick={() => handleTabChange(type.name)}
-                      className={`text-xl sm:text-2xl font-bold ${
+                      className={`text-xl sm:text-2xl font-bold px-2 py-1 rounded-md ${
                         selectedTab === type.name
                           ? 'text-white'
                           : 'text-slate-400 hover:text-white'
