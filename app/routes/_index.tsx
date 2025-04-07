@@ -58,6 +58,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const campaignType = url.searchParams.get('campaignType') || 'Airdrop';
 
   const types = await prisma.type.findMany();
+  const tags = await prisma.tag.findMany(); // Fetch all tags
   const campaigns = await prisma.campaign.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
@@ -117,7 +118,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return new Response(
-    JSON.stringify({ rewards, featuredRewards, campaignType, types }),
+    JSON.stringify({ rewards, featuredRewards, campaignType, types, tags }),
     {
       headers: { 'Content-Type': 'application/json' },
     }
@@ -266,11 +267,13 @@ export default function Index() {
     featuredRewards,
     campaignType,
     types,
+    tags,
   } = useLoaderData<{
     rewards: any[];
     featuredRewards: any[];
     campaignType: string;
     types: any[];
+    tags: any[];
   }>();
   const navigation = useNavigation();
   const location = useLocation();
@@ -278,6 +281,7 @@ export default function Index() {
   const [sortBy, setSortBy] = useState('latest');
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedTab, setSelectedTab] = useState(campaignType || 'Airdrop');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]); // State for selected tag filters
   const [filteredRewards, setFilteredRewards] = useState(initialRewards);
   const scrollPositionRef = useRef(0);
 
@@ -307,9 +311,13 @@ export default function Index() {
 
   useEffect(() => {
     let updatedRewards = [...initialRewards];
+
+    // Filter by campaign type
     updatedRewards = updatedRewards.filter(
       (reward) => reward.type?.name === selectedTab
     );
+
+    // Filter by search term
     if (searchTerm) {
       updatedRewards = updatedRewards.filter(
         (reward) =>
@@ -317,6 +325,15 @@ export default function Index() {
           reward.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+
+    // Filter by selected tags
+    if (selectedTags.length > 0) {
+      updatedRewards = updatedRewards.filter((reward) =>
+        reward.tags.some((tag) => selectedTags.includes(tag.name))
+      );
+    }
+
+    // Sort
     if (sortBy === 'latest') {
       updatedRewards.sort((a, b) =>
         sortOrder === 'desc'
@@ -330,8 +347,16 @@ export default function Index() {
           : a.title.localeCompare(b.title)
       );
     }
+
     setFilteredRewards(updatedRewards);
-  }, [searchTerm, sortBy, sortOrder, selectedTab, initialRewards]);
+  }, [
+    searchTerm,
+    sortBy,
+    sortOrder,
+    selectedTab,
+    selectedTags,
+    initialRewards,
+  ]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -346,6 +371,14 @@ export default function Index() {
 
   const handleTabChange = (tab: string) => {
     setSelectedTab(tab);
+  };
+
+  const handleTagToggle = (tagName: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagName)
+        ? prev.filter((t) => t !== tagName)
+        : [...prev, tagName]
+    );
   };
 
   return (
@@ -364,7 +397,7 @@ export default function Index() {
           <div className="mb-4 sm:mb-8">
             <div className="p-4 max-w-7xl mx-auto w-full pt-24 sm:pt-32 md:pt-24">
               <h1 className="text-3xl sm:text-4xl md:text-7xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500/80">
-                Discover Exclusive <br /> Rewards & Campaigns
+                Discover Exclusive <br /> Rewards & Airdrops
               </h1>
               <p className="mt-4 font-normal text-sm sm:text-base text-slate-400 max-w-lg text-center mx-auto">
                 Stay ahead of the game on exclusive airdrops with{' '}
@@ -397,25 +430,42 @@ export default function Index() {
 
           <div>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
-              <div className="flex gap-4 flex-wrap sm:flex-nowrap">
-                {[...types]
-                  .sort((a, b) => {
-                    const order = ['Airdrop', 'Kaito'];
-                    return order.indexOf(a.name) - order.indexOf(b.name);
-                  })
-                  .map((type) => (
+              <div className="flex flex-col gap-4">
+                <div className="flex gap-4 flex-wrap sm:flex-nowrap">
+                  {[...types]
+                    .sort((a, b) => {
+                      const order = ['Airdrop', 'Kaito'];
+                      return order.indexOf(a.name) - order.indexOf(b.name);
+                    })
+                    .map((type) => (
+                      <button
+                        key={type.name}
+                        onClick={() => handleTabChange(type.name)}
+                        className={`text-xl sm:text-2xl font-bold px-2 py-1 rounded-md ${
+                          selectedTab === type.name
+                            ? 'text-white'
+                            : 'text-slate-400 hover:text-white'
+                        } transition-colors`}
+                      >
+                        {type.name} Campaigns
+                      </button>
+                    ))}
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {tags.map((tag) => (
                     <button
-                      key={type.name}
-                      onClick={() => handleTabChange(type.name)}
-                      className={`text-xl sm:text-2xl font-bold px-2 py-1 rounded-md ${
-                        selectedTab === type.name
-                          ? 'text-white'
-                          : 'text-slate-400 hover:text-white'
-                      } transition-colors`}
+                      key={tag.id}
+                      onClick={() => handleTagToggle(tag.name)}
+                      className={`px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
+                        selectedTags.includes(tag.name)
+                          ? 'bg-indigo-400/40 text-indigo-100 border border-indigo-400/60'
+                          : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-600/50'
+                      }`}
                     >
-                      {type.name} Campaigns
+                      {tag.name}
                     </button>
                   ))}
+                </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center w-full sm:w-auto">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -448,8 +498,8 @@ export default function Index() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {filteredRewards.length === 0 ? (
                 <p className="text-slate-400 col-span-full text-center text-sm sm:text-base">
-                  {searchTerm
-                    ? 'No campaigns match your search.'
+                  {searchTerm || selectedTags.length > 0
+                    ? 'No campaigns match your filters.'
                     : `No ${selectedTab} campaigns available yet.`}
                 </p>
               ) : (
