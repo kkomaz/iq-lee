@@ -252,7 +252,7 @@ export default function CampaignDetail() {
           </div>
         </div>
 
-        <div className="flex items-center justify-center lg:justify-between mb-4 sm:mb-8">
+        <div className="flex items-center justify-between mb-4 sm:mb-8">
           <Link
             to="/"
             className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"

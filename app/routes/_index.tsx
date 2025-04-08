@@ -172,19 +172,19 @@ function RewardCard({
           reward.isPlaceholder ? '' : 'hover:scale-[1.02]'
         } transition-all h-full bg-slate-900/50 backdrop-blur-sm ${borderClass}`}
       >
-        <div className="absolute -top-4 -right-4 w-12 h-12 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-4 border-slate-900 shadow-xl">
+        <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full overflow-hidden border-4 border-slate-900 shadow-xl">
           <img
             src={reward.image}
             alt={reward.title}
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="flex justify-between items-start mb-3 p-4 sm:p-3 md:p-4">
-          <div className="flex flex-col gap-2">
-            <h3 className="text-lg sm:text-base md:text-lg font-bold text-white line-clamp-1">
+        <div className="flex justify-between items-start mb-2 p-3">
+          <div className="flex flex-col gap-1">
+            <h3 className="text-base font-bold text-white line-clamp-1">
               {reward.title}
             </h3>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-1 flex-wrap">
               <Badge className="bg-purple-500/10 text-purple-500 border border-purple-500/20">
                 {reward.type?.name || 'Unknown'}
               </Badge>
@@ -214,15 +214,15 @@ function RewardCard({
             </div>
           </div>
         </div>
-        <p className="text-slate-300 mb-4 px-4 sm:px-3 md:px-4 text-sm sm:text-xs md:text-sm line-clamp-2">
+        <p className="text-slate-300 mb-3 px-3 text-xs line-clamp-2">
           {reward.description}
         </p>
-        <div className="mb-4 px-4 sm:px-3 md:px-4">
-          <div className="text-lg sm:text-base md:text-lg font-bold text-[rgb(var(--primary))] mb-0.5">
+        <div className="mb-3 px-3">
+          <div className="text-base font-bold text-[rgb(var(--primary))] mb-0.5">
             {reward.value}
           </div>
           {!reward.isPlaceholder && (
-            <div className="text-xs sm:text-xs md:text-sm text-emerald-300">
+            <div className="text-xs text-emerald-300">
               {reward.totalAmount === 0 ? (
                 <span>(Est. TBD)</span>
               ) : (
@@ -231,12 +231,12 @@ function RewardCard({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 text-slate-400 text-xs sm:text-xs md:text-sm px-4 sm:px-3 md:px-4 pb-4">
+        <div className="flex items-center gap-2 text-slate-400 text-xs px-3 pb-3">
           {reward.isPlaceholder ? (
             <span>Email: {reward.email}</span>
           ) : (
             <>
-              <Clock className="w-4 h-4 sm:w-3 sm:h-3 md:w-4 md:h-4" />
+              <Clock className="w-3 h-3" />
               <span>
                 Expires:{' '}
                 {reward.expiresAt
