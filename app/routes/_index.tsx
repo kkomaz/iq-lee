@@ -223,7 +223,7 @@ function RewardCard({
             </h3>
             <div className="flex gap-1 flex-wrap">
               <Badge className="bg-purple-500/10 text-purple-500 border border-purple-500/20">
-                {reward.type?.name || 'Unknown'}
+                {reward.type?.name || 'Ad'}
               </Badge>
               {reward.tags?.map((tag) => (
                 <Badge
