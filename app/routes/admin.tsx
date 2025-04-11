@@ -13,6 +13,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import React, { Fragment } from 'react';
 import AuthLogin from '~/components/authenticated/AuthLogin';
+import LongDescriptionEditor from '~/components/LongDescriptionEditor';
 
 // Dynamically load react-select on the client side with React.lazy
 const Select = React.lazy(() => import('react-select'));
@@ -841,19 +842,9 @@ export default function Admin() {
                             />
                           </div>
                           <div className="md:col-span-2">
-                            <label
-                              htmlFor="longDescription"
-                              className="block text-slate-300 text-sm font-medium mb-2"
-                            >
-                              Long Description
-                            </label>
-                            <textarea
-                              id="longDescription"
+                            <LongDescriptionEditor
+                              initialValue={editingCampaign?.longDescription}
                               name="longDescription"
-                              defaultValue={editingCampaign?.longDescription}
-                              className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-                              placeholder="Enter detailed description"
-                              rows={5}
                             />
                           </div>
                           <div>
