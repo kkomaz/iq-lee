@@ -324,7 +324,7 @@ export default function Index() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('latest');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [selectedTab, setSelectedTab] = useState(campaignType || 'Airdrop');
+  const [selectedTab, setSelectedTab] = useState(campaignType || 'Kaito');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [filteredRewards, setFilteredRewards] = useState<any[]>([]); // Unified filtered rewards
   const scrollPositionRef = useRef(0);
@@ -343,7 +343,7 @@ export default function Index() {
     const search = params.get('search') || '';
     const sortByParam = params.get('sortBy') || 'latest';
     const sortOrderParam = params.get('sortOrder') || 'desc';
-    const campaignTypeParam = params.get('campaignType') || 'Airdrop';
+    const campaignTypeParam = params.get('campaignType') || 'Kaito';
     setSearchTerm(search);
     setSortBy(sortByParam);
     setSortOrder(sortOrderParam);
