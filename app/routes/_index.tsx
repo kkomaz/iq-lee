@@ -58,7 +58,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const campaignType = url.searchParams.get('campaignType') || 'Airdrop';
 
   const types = await prisma.type.findMany();
-  const tags = await prisma.tag.findMany(); // Fetch all tags
+  const tags = await prisma.tag.findMany();
   const campaigns = await prisma.campaign.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
@@ -67,10 +67,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
   });
 
-  const featuredCampaigns = campaigns
+  const currentDate = new Date();
+
+  // Split campaigns into active and expired
+  const activeCampaigns = campaigns.filter(
+    (c) => !c.expiresAt || new Date(c.expiresAt) >= currentDate
+  );
+  const expiredCampaigns = campaigns.filter(
+    (c) => c.expiresAt && new Date(c.expiresAt) < currentDate
+  );
+
+  // Featured campaigns (only from active campaigns)
+  const featuredCampaigns = activeCampaigns
     .filter((c) => c.featured && !c.isAd)
     .slice(0, 2);
-  const adCampaigns = campaigns.filter((c) => c.isAd).slice(0, 2);
+  const adCampaigns = activeCampaigns.filter((c) => c.isAd).slice(0, 2);
 
   const sortedFeatured = [...featuredCampaigns, ...adCampaigns];
   const adSpots = 2;
@@ -93,32 +104,55 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const featuredRewards = sortedFeatured.slice(0, 4);
-  let rewards = campaigns.filter((c) => !c.isAd);
 
+  // Active and expired rewards (non-ads)
+  let activeRewards = activeCampaigns.filter((c) => !c.isAd);
+  let expiredRewards = expiredCampaigns.filter((c) => !c.isAd);
+
+  // Apply search filter
   if (searchTerm) {
-    rewards = rewards.filter(
+    activeRewards = activeRewards.filter(
+      (c) =>
+        c.title.toLowerCase().includes(searchTerm) ||
+        c.description.toLowerCase().includes(searchTerm)
+    );
+    expiredRewards = expiredRewards.filter(
       (c) =>
         c.title.toLowerCase().includes(searchTerm) ||
         c.description.toLowerCase().includes(searchTerm)
     );
   }
 
-  if (sortBy === 'latest') {
-    rewards.sort((a, b) =>
-      sortOrder === 'desc'
-        ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-  } else if (sortBy === 'title') {
-    rewards.sort((a, b) =>
-      sortOrder === 'desc'
-        ? b.title.localeCompare(a.title)
-        : a.title.localeCompare(b.title)
-    );
-  }
+  // Apply sorting
+  const sortCampaigns = (rewards: any[]) => {
+    if (sortBy === 'latest') {
+      rewards.sort((a, b) =>
+        sortOrder === 'desc'
+          ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    } else if (sortBy === 'title') {
+      rewards.sort((a, b) =>
+        sortOrder === 'desc'
+          ? b.title.localeCompare(a.title)
+          : a.title.localeCompare(b.title)
+      );
+    }
+    return rewards;
+  };
+
+  activeRewards = sortCampaigns(activeRewards);
+  expiredRewards = sortCampaigns(expiredRewards);
 
   return new Response(
-    JSON.stringify({ rewards, featuredRewards, campaignType, types, tags }),
+    JSON.stringify({
+      activeRewards,
+      expiredRewards,
+      featuredRewards,
+      campaignType,
+      types,
+      tags,
+    }),
     {
       headers: { 'Content-Type': 'application/json' },
     }
@@ -148,6 +182,7 @@ function RewardCard({
   reward: any;
   showStatusBadges?: boolean;
 }) {
+  const isExpired = reward.expiresAt && new Date(reward.expiresAt) < new Date();
   const borderClass = reward.isPlaceholder
     ? 'border-2 border-blue-500 bg-gradient-to-r from-blue-500/20 to-transparent'
     : showStatusBadges
@@ -156,6 +191,8 @@ function RewardCard({
       : reward.featured
       ? 'border-2 border-yellow-500 bg-gradient-to-r from-yellow-500/20 to-transparent hover:from-yellow-500/30 hover:to-yellow-500/10'
       : 'border border-slate-800'
+    : isExpired
+    ? 'border border-slate-700 opacity-75'
     : 'border border-slate-800';
 
   const Container = reward.isPlaceholder ? 'div' : Link;
@@ -211,6 +248,11 @@ function RewardCard({
                   Ad
                 </Badge>
               )}
+              {isExpired && (
+                <Badge className="bg-red-500/10 text-red-500 border border-red-500/20">
+                  Expired
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -238,7 +280,7 @@ function RewardCard({
             <>
               <Clock className="w-3 h-3" />
               <span>
-                Expires:{' '}
+                {isExpired ? 'Expired' : 'Expires'}:{' '}
                 {reward.expiresAt
                   ? new Date(reward.expiresAt).toLocaleDateString('en-US', {
                       month: 'long',
@@ -263,13 +305,15 @@ function slugify(text: string): string {
 
 export default function Index() {
   const {
-    rewards: initialRewards,
+    activeRewards: initialActiveRewards,
+    expiredRewards: initialExpiredRewards,
     featuredRewards,
     campaignType,
     types,
     tags,
   } = useLoaderData<{
-    rewards: any[];
+    activeRewards: any[];
+    expiredRewards: any[];
     featuredRewards: any[];
     campaignType: string;
     types: any[];
@@ -281,9 +325,18 @@ export default function Index() {
   const [sortBy, setSortBy] = useState('latest');
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedTab, setSelectedTab] = useState(campaignType || 'Airdrop');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]); // State for selected tag filters
-  const [filteredRewards, setFilteredRewards] = useState(initialRewards);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [filteredRewards, setFilteredRewards] = useState<any[]>([]); // Unified filtered rewards
   const scrollPositionRef = useRef(0);
+
+  // Define tab options including Expired
+  const tabOptions = [
+    ...types.map((type) => type.name), // Airdrop, Kaito
+    'Expired',
+  ].sort((a, b) => {
+    const order = ['Airdrop', 'Kaito', 'Expired'];
+    return order.indexOf(a) - order.indexOf(b);
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -310,52 +363,60 @@ export default function Index() {
   }, [navigation.state, location]);
 
   useEffect(() => {
-    let updatedRewards = [...initialRewards];
+    let rewardsToFilter: any[] = [];
 
-    // Filter by campaign type
-    updatedRewards = updatedRewards.filter(
-      (reward) => reward.type?.name === selectedTab
-    );
+    // Determine which rewards to show based on the selected tab
+    if (selectedTab === 'Expired') {
+      rewardsToFilter = [...(initialExpiredRewards || [])];
+    } else {
+      rewardsToFilter = [...(initialActiveRewards || [])].filter(
+        (reward) => reward.type?.name === selectedTab
+      );
+    }
 
     // Filter by search term
     if (searchTerm) {
-      updatedRewards = updatedRewards.filter(
+      rewardsToFilter = rewardsToFilter.filter(
         (reward) =>
-          reward.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          reward.description.toLowerCase().includes(searchTerm.toLowerCase())
+          reward.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          reward.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filter by selected tags
     if (selectedTags.length > 0) {
-      updatedRewards = updatedRewards.filter((reward) =>
-        reward.tags.some((tag) => selectedTags.includes(tag.name))
+      rewardsToFilter = rewardsToFilter.filter((reward) =>
+        reward.tags?.some((tag) => selectedTags.includes(tag.name))
       );
     }
 
     // Sort
-    if (sortBy === 'latest') {
-      updatedRewards.sort((a, b) =>
-        sortOrder === 'desc'
-          ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
-    } else if (sortBy === 'title') {
-      updatedRewards.sort((a, b) =>
-        sortOrder === 'desc'
-          ? b.title.localeCompare(a.title)
-          : a.title.localeCompare(b.title)
-      );
-    }
+    const sortRewards = (rewards: any[]) => {
+      if (sortBy === 'latest') {
+        rewards.sort((a, b) =>
+          sortOrder === 'desc'
+            ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      } else if (sortBy === 'title') {
+        rewards.sort((a, b) =>
+          sortOrder === 'desc'
+            ? b.title.localeCompare(a.title)
+            : a.title.localeCompare(b.title)
+        );
+      }
+      return rewards;
+    };
 
-    setFilteredRewards(updatedRewards);
+    setFilteredRewards(sortRewards(rewardsToFilter));
   }, [
     searchTerm,
     sortBy,
     sortOrder,
     selectedTab,
     selectedTags,
-    initialRewards,
+    initialActiveRewards,
+    initialExpiredRewards,
   ]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -432,24 +493,19 @@ export default function Index() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4 flex-wrap sm:flex-nowrap">
-                  {[...types]
-                    .sort((a, b) => {
-                      const order = ['Airdrop', 'Kaito'];
-                      return order.indexOf(a.name) - order.indexOf(b.name);
-                    })
-                    .map((type) => (
-                      <button
-                        key={type.name}
-                        onClick={() => handleTabChange(type.name)}
-                        className={`text-xl sm:text-2xl font-bold px-2 py-1 rounded-md ${
-                          selectedTab === type.name
-                            ? 'text-white'
-                            : 'text-slate-400 hover:text-white'
-                        } transition-colors`}
-                      >
-                        {type.name} Campaigns
-                      </button>
-                    ))}
+                  {tabOptions.map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => handleTabChange(tab)}
+                      className={`text-xl sm:text-2xl font-bold px-2 py-1 rounded-md ${
+                        selectedTab === tab
+                          ? 'text-white'
+                          : 'text-slate-400 hover:text-white'
+                      } transition-colors`}
+                    >
+                      {tab} Campaigns
+                    </button>
+                  ))}
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {tags.map((tag) => (
@@ -495,22 +551,29 @@ export default function Index() {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {filteredRewards.length === 0 ? (
-                <p className="text-slate-400 col-span-full text-center text-sm sm:text-base">
-                  {searchTerm || selectedTags.length > 0
-                    ? 'No campaigns match your filters.'
-                    : `No ${selectedTab} campaigns available yet.`}
-                </p>
-              ) : (
-                filteredRewards.map((reward) => (
-                  <RewardCard
-                    key={reward.id}
-                    reward={reward}
-                    showStatusBadges={false}
-                  />
-                ))
-              )}
+
+            {/* Unified Campaigns Section */}
+            <div className="mb-8 sm:mb-12">
+              <h2 className="text-xl sm:text-2xl font-bold mb-6 text-white">
+                {selectedTab} Campaigns
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                {filteredRewards.length === 0 ? (
+                  <p className="text-slate-400 col-span-full text-center text-sm sm:text-base">
+                    {searchTerm || selectedTags.length > 0
+                      ? `No ${selectedTab.toLowerCase()} campaigns match your filters.`
+                      : `No ${selectedTab.toLowerCase()} campaigns available yet.`}
+                  </p>
+                ) : (
+                  filteredRewards.map((reward) => (
+                    <RewardCard
+                      key={reward.id}
+                      reward={reward}
+                      showStatusBadges={false}
+                    />
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
