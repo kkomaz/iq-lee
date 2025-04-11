@@ -66,6 +66,7 @@ export const loader: LoaderFunction = async () => {
 };
 export default function App() {
   const { PRIVY_ID } = useLoaderData<{ PRIVY_ID: string }>();
+  console.log('loaded');
 
   return (
     <html lang="en">
