@@ -343,7 +343,7 @@ export default function Index() {
     const search = params.get('search') || '';
     const sortByParam = params.get('sortBy') || 'latest';
     const sortOrderParam = params.get('sortOrder') || 'desc';
-    const campaignTypeParam = params.get('campaignType') || 'Kaito';
+    const campaignTypeParam = params.get('campaignType') || 'Airdrop';
     setSearchTerm(search);
     setSortBy(sortByParam);
     setSortOrder(sortOrderParam);
