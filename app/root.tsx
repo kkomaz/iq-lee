@@ -50,7 +50,13 @@ export function meta() {
   ];
 }
 
-export const links = () => [{ rel: 'stylesheet', href: styles }];
+export const links = () => [
+  { rel: 'stylesheet', href: styles },
+  {
+    rel: 'stylesheet',
+    href: 'https://unpkg.com/react-quill@1.3.3/dist/quill.snow.css',
+  },
+];
 
 // Loader function to pass environment variables to the client
 export const loader: LoaderFunction = async () => {
