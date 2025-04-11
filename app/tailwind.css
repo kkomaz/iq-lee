@@ -158,3 +158,14 @@
   margin-bottom: 0.5rem; /* space-y-2 */
   font-size: 1rem; /* text-base */
 }
+
+/* Style links to match your app's teal color scheme */
+.prose-invert a {
+  color: #60a5fa; /* text-blue-400 */
+  text-decoration: underline;
+  transition: color 0.2s ease-in-out;
+}
+
+.prose-invert a:hover {
+  color: #93c5fd; /* text-blue-300 */
+}
