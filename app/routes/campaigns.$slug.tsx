@@ -11,6 +11,9 @@ import {
 import prisma from '~/lib/prisma.server';
 import { SocialIcons } from '~/components/SocialIcons';
 import XIcon from '~/components/XIcon';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
+import { useMarkdown } from '~/utils/useMarkdown';
 
 // Base URL for your app (replace with your actual domain)
 const BASE_URL = 'https://incentiveiq.com';
@@ -180,6 +183,7 @@ function CampaignCard({ campaign }: { campaign: any }) {
 
 export default function CampaignDetail() {
   const { campaign, randomCampaigns } = useLoaderData<any>();
+  const longDescriptionHtml = useMarkdown(campaign.longDescription);
 
   const borderColor = campaign.featured
     ? 'border-yellow-500'
@@ -280,10 +284,14 @@ export default function CampaignDetail() {
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-white">
                 Campaign Information
               </h2>
-              <div className="prose prose-invert max-w-none">
-                <pre className="whitespace-pre-wrap font-sans text-slate-300 text-sm sm:text-base">
-                  {campaign.longDescription}
-                </pre>
+              <div className="prose prose-invert max-w-none text-slate-300">
+                {longDescriptionHtml ? (
+                  <div
+                    dangerouslySetInnerHTML={{ __html: longDescriptionHtml }}
+                  />
+                ) : (
+                  <p>Loading...</p>
+                )}
               </div>
             </section>
 
