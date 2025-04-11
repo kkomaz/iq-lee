@@ -240,7 +240,6 @@ export default function CampaignDetail() {
                 ? 'TBD'
                 : `$${campaign.totalAmount.toLocaleString()}`}
             </div>
-            {/* Expiration Date */}
             <div className="flex items-center gap-2 text-slate-400 mt-2 justify-start text-xs sm:text-sm">
               <Clock className="w-4 h-4" />
               <span>
@@ -256,19 +255,89 @@ export default function CampaignDetail() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between mb-4 sm:mb-8">
+        <div className="mb-4 sm:mb-8">
           <Link
             to="/"
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Campaigns</span>
           </Link>
-          {/* <SocialIcons /> */}
+
+          {/* Links Section */}
+          <div className="bg-slate-900/70 rounded-xl p-4 sm:p-6 border border-[rgb(var(--primary))] border-opacity-30 shadow-inner">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              {campaign.companyUrl && (
+                <a
+                  href={campaign.companyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all hover:bg-slate-800/50 rounded-lg p-2 w-full sm:w-auto"
+                >
+                  <Globe className="w-5 h-5" />
+                  <span>Website</span>
+                </a>
+              )}
+              {campaign.airdropUrl && campaign.kaitoUrl && (
+                <a
+                  href={campaign.airdropUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all hover:bg-slate-800/50 rounded-lg p-2 w-full sm:w-auto"
+                >
+                  <AppWindow className="w-5 h-5" />
+                  <span>App</span>
+                </a>
+              )}
+              {campaign.xUrl && (
+                <a
+                  href={campaign.xUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all hover:bg-slate-800/50 rounded-lg p-2 w-full sm:w-auto"
+                >
+                  <XIcon url={campaign.xUrl} className="w-5 h-5" />
+                  <span>Follow</span>
+                </a>
+              )}
+            </div>
+            <div className="mt-4">
+              {campaign.airdropUrl && !campaign.kaitoUrl && (
+                <a
+                  href={campaign.airdropUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-[rgb(var(--primary))] text-slate-950 rounded-lg px-6 py-3 font-medium hover:opacity-90 transition-all text-center flex items-center justify-center gap-2"
+                >
+                  <img
+                    src={campaign.image}
+                    alt="Airdrop Icon"
+                    className="w-6 h-6 rounded-full"
+                  />
+                  <span>View Airdrop</span>
+                </a>
+              )}
+              {campaign.kaitoUrl && (
+                <a
+                  href={campaign.kaitoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-[rgb(var(--primary))] text-slate-950 rounded-lg px-6 py-3 font-medium hover:opacity-90 transition-all text-center flex items-center justify-center gap-2"
+                >
+                  <img
+                    src="https://pbs.twimg.com/profile_images/1866818904800063488/Qm4DW488_400x400.jpg"
+                    alt="Leaderboard Icon"
+                    className="w-6 h-6 rounded-full"
+                  />
+                  <span>View Leaderboard</span>
+                </a>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:gap-8">
-          <div className="space-y-6 sm:space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             <section>
               <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-white">
                 About
@@ -331,7 +400,6 @@ export default function CampaignDetail() {
                   ? 'TBD'
                   : `$${campaign.totalAmount.toLocaleString()}`}
               </div>
-              {/* Expiration Date */}
               <div className="flex items-center gap-2 text-slate-400 mt-2 justify-start text-xs sm:text-sm">
                 <Clock className="w-4 h-4" />
                 <span>
@@ -344,76 +412,6 @@ export default function CampaignDetail() {
                     : 'TBD'}
                 </span>
               </div>
-            </div>
-            <div className="bg-slate-900/70 rounded-xl p-4 sm:p-6 border border-[rgb(var(--primary))] border-opacity-30 shadow-inner">
-              {/* Links Section */}
-              <div className="space-y-3 mb-6">
-                {campaign.companyUrl && (
-                  <a
-                    href={campaign.companyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all transform hover:scale-105 hover:bg-slate-800/50 rounded-lg p-2"
-                  >
-                    <Globe className="w-5 h-5" />
-                    <span>Website</span>
-                  </a>
-                )}
-                {campaign.airdropUrl && campaign.kaitoUrl && (
-                  <a
-                    href={campaign.airdropUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all transform hover:scale-105 hover:bg-slate-800/50 rounded-lg p-2"
-                  >
-                    <AppWindow className="w-5 h-5" />
-                    <span>App</span>
-                  </a>
-                )}
-                {campaign.xUrl && (
-                  <a
-                    href={campaign.xUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-blue-400 hover:text-blue-300 transition-all transform hover:scale-105 hover:bg-slate-800/50 rounded-lg p-2"
-                  >
-                    <XIcon url={campaign.xUrl} className="w-5 h-5" />
-                    <span>Follow</span>
-                  </a>
-                )}
-              </div>
-              {/* Link to campaign.kaitoUrl */}
-              {campaign.airdropUrl && !campaign.kaitoUrl && (
-                <a
-                  href={campaign.airdropUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-[rgb(var(--primary))] text-slate-950 rounded-lg px-6 py-3 font-medium hover:opacity-90 transition-all text-center flex items-center justify-center gap-2"
-                >
-                  <img
-                    src={campaign.image}
-                    alt="Leaderboard Icon"
-                    className="w-6 h-6 rounded-full"
-                  />
-                  <span>View Airdrop</span>
-                </a>
-              )}
-              {/* Link to campaign.kaitoUrl */}
-              {campaign.kaitoUrl && (
-                <a
-                  href={campaign.kaitoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full bg-[rgb(var(--primary))] text-slate-950 rounded-lg px-6 py-3 font-medium hover:opacity-90 transition-all text-center flex items-center justify-center gap-2"
-                >
-                  <img
-                    src="https://pbs.twimg.com/profile_images/1866818904800063488/Qm4DW488_400x400.jpg"
-                    alt="Leaderboard Icon"
-                    className="w-6 h-6 rounded-full"
-                  />
-                  <span>View Leaderboard</span>
-                </a>
-              )}
             </div>
           </div>
         </div>
