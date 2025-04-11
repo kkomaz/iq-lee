@@ -39,3 +39,85 @@
 .bg-grid-white {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(255 255 255 / 0.04)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
 }
+
+/* app/styles/quill-overrides.css */
+.ql-container {
+  background-color: rgba(30, 41, 59, 0.5); /* bg-slate-800/50 */
+  border: 1px solid #334155; /* border-slate-700 */
+  border-radius: 0 0 0.5rem 0.5rem; /* Rounded bottom corners */
+  font-family: inherit; /* Match your app's font */
+}
+
+.ql-editor {
+  color: #e2e8f0 !important; /* text-slate-300, with !important to ensure it overrides defaults */
+  min-height: 150px; /* Slightly taller for better usability */
+  padding: 12px; /* More padding for text */
+}
+
+/* Placeholder */
+.ql-container .ql-editor.ql-blank::before {
+  color: #64748b; /* placeholder-slate-500 */
+  font-style: italic;
+}
+
+/* Links in the editor */
+.ql-container .ql-editor a {
+  color: #60a5fa; /* text-blue-400 */
+  text-decoration: underline;
+}
+
+.ql-container .ql-editor a:hover {
+  color: #93c5fd; /* text-blue-300 */
+}
+
+/* Toolbar */
+.ql-toolbar {
+  background-color: rgba(
+    15,
+    23,
+    42,
+    0.8
+  ); /* Slightly darker: bg-slate-900/80 */
+  border: 1px solid #334155; /* border-slate-700 */
+  border-bottom: none; /* Remove bottom border to connect with editor */
+  border-radius: 0.5rem 0.5rem 0 0; /* Rounded top corners */
+  padding: 8px; /* Add padding for better spacing */
+}
+
+/* Toolbar icons */
+.ql-toolbar .ql-stroke {
+  stroke: #e2e8f0; /* text-slate-300 */
+}
+
+.ql-toolbar .ql-fill {
+  fill: #e2e8f0; /* text-slate-300 */
+}
+
+.ql-toolbar .ql-picker {
+  color: #e2e8f0; /* text-slate-300 */
+}
+
+.ql-toolbar .ql-picker-options {
+  background-color: #1e293b; /* bg-slate-800 */
+  border: 1px solid #334155; /* border-slate-700 */
+  color: #e2e8f0; /* text-slate-300 */
+}
+
+/* Hover and active states for toolbar buttons */
+.ql-toolbar button:hover,
+.ql-toolbar .ql-picker-label:hover,
+.ql-toolbar .ql-picker-item:hover {
+  background-color: #4b5e77; /* bg-slate-600 */
+}
+
+.ql-toolbar button.ql-active,
+.ql-toolbar .ql-picker-label.ql-active,
+.ql-toolbar .ql-picker-item.ql-selected {
+  background-color: rgb(var(--primary)); /* Use your primary color */
+  color: #1e293b; /* text-slate-800 for contrast */
+}
+
+/* Focus state to match other inputs */
+.ql-container:focus-within {
+  border-color: rgb(var(--primary));
+}

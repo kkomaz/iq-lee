@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react';
+// app/components/LongDescriptionEditor.tsx
+import { useState, useEffect, Suspense, lazy } from 'react';
+
+// Dynamically import react-quill client-side
+const ReactQuill = lazy(() => import('react-quill'));
 
 interface LongDescriptionEditorProps {
   initialValue?: string;
@@ -11,7 +15,7 @@ export default function LongDescriptionEditor({
 }: LongDescriptionEditorProps) {
   const [value, setValue] = useState(initialValue);
 
-  // Sync initialValue when it changes (e.g., when editingCampaign changes)
+  // Sync with initialValue when it changes (e.g., when editingCampaign changes)
   useEffect(() => {
     setValue(initialValue);
   }, [initialValue]);
@@ -24,15 +28,33 @@ export default function LongDescriptionEditor({
       >
         Long Description
       </label>
-      <textarea
-        id="longDescription"
-        name={name} // Ensure this matches the form field name expected by the server
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700 focus:outline-none focus:border-[rgb(var(--primary))] transition-all placeholder-slate-500"
-        placeholder="Enter detailed description"
-        rows={5}
-      />
+      <Suspense
+        fallback={
+          <textarea
+            disabled
+            className="w-full p-3 rounded-lg bg-slate-800/50 text-white border border-slate-700"
+            placeholder="Loading editor..."
+          />
+        }
+      >
+        <ReactQuill
+          theme="snow"
+          value={value}
+          onChange={setValue}
+          placeholder="Enter detailed description"
+          modules={{
+            toolbar: [
+              [{ header: [1, 2, false] }],
+              ['bold', 'italic', 'underline'],
+              ['link'],
+              [{ list: 'ordered' }, { list: 'bullet' }],
+              ['clean'],
+            ],
+          }}
+        />
+      </Suspense>
+      {/* Hidden input to include value in Remix form submission */}
+      <input type="hidden" name={name} value={value} />
     </div>
   );
 }
